@@ -1,7 +1,7 @@
-﻿Create Database GUCeraaMS2_2
+﻿Create Database GUCeraaMS2_3
 
 go
-use GUCeraaMS2_2
+use GUCeraaMS2_3
 
 CREATE TABLE USERS(
 id int primary key identity,
