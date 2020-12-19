@@ -131,7 +131,7 @@ create table PromoCode(
 code varchar(20) Primary Key,
 issueDate datetime,
 expiryDate datetime, 
-discount decimal(3,2),
+discount decimal(4,2),
 admin_id int,
 Foreign Key(admin_id) REFERENCES Admins ON DELETE CASCADE ON UPDATE CASCADE
 )
