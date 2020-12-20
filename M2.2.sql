@@ -109,8 +109,8 @@ Foreign Key(cid) REFERENCES Course ON DELETE CASCADE ON UPDATE CASCADE
 CREATE TABLE StudentTakeAssignment(
 stid int REFERENCES Student ON DELETE CASCADE ON UPDATE CASCADE,
 cid int  REFERENCES Course ON DELETE NO ACTION ON UPDATE NO ACTION,
-assignmentNumber int ,
-assignmentType int ,
+assignmentNumber int REFERENCES Assignment.number ON DELETE NO ACTION ON UPDATE NO ACTION ,
+assignmentType varchar(25) REFERENCES Assignment.Assign_type ON DELETE NO ACTION ON UPDATE NO ACTION  ,
 grade int ,
 PRIMARY KEY(stid,cid)
 )
@@ -518,43 +518,4 @@ where @cid=cid
 ---------------------------------------------------------------------------------------------------
 
 
-
---------------------------------- STUDENT -----------------------------
-
-
--- a) View my profile that contains all my information. Signature: 
-
-GO 
-CREATE PROC viewMyProfile
-@id INT 
-AS
-SELECT * FROM Users u inner join Student s on u.id = s.id 
-               where u.id = @id
-
-
--------------------------- 
---b) Edit my profile (change any of my personal information). 
-
-GO 
-CREATE PROC editMyProfile 
-@id int, 
-@firstName varchar(10), @lastName varchar(10), 
-@password varchar(10), @gender binary, 
-@email varchar(10), @address varchar(10) 
-AS 
-UPDATE Users 
-SET firstName = @firstName , lastName = @lastName , 
- password = @password , gender = @gender ,
- email = @email , address = @address
-WHERE id =@id
-
------------------------------------------
--- c) List all courses in the system accepted by the admin so I can choose one to enroll( I can not view the course content (URLs to materials unless I enroll in the course). 
-GO 
-CREATE PROC availableCourses
-AS 
-SELECT c.name   FROM Course c where c.accepted = 1
-
-
--------------------------------------------------------
 
