@@ -519,3 +519,61 @@ where @cid=cid
 
 
 
+
+--------------------------------- STUDENT -----------------------------
+
+
+-- a) View my profile that contains all my information. Signature: 
+
+GO 
+CREATE PROC viewMyProfile
+@id INT 
+AS
+SELECT * FROM Users u inner join Student s on u.id = s.id 
+               where u.id = @id
+
+
+
+-------------------------- 
+--b) Edit my profile (change any of my personal information). 
+
+GO 
+CREATE PROC editMyProfile 
+@id int, 
+@firstName varchar(10), @lastName varchar(10), 
+@password varchar(10), @gender binary, 
+@email varchar(10), @address varchar(10) 
+AS 
+UPDATE Users 
+SET firstName = CASE WHEN @firstName IS NULL THEN firstName
+ELSE @firstName END;
+
+UPDATE USERS
+SET lastName = CASE WHEN @lastName IS NULL THEN lastName
+ELSE @lastName END WHERE id =@id ;
+
+UPDATE USERS
+SET password = CASE WHEN @password IS NULL THEN password
+ELSE @password END WHERE id =@id ;
+
+UPDATE USERS
+SET gender = CASE WHEN @gender IS NULL THEN gender
+ELSE @gender END WHERE id =@id ;
+
+UPDATE USERS
+SET email = CASE WHEN @email IS NULL THEN email
+ELSE @email END WHERE id =@id;
+
+UPDATE USERS
+SET address = CASE WHEN @address IS NULL THEN address
+ELSE @address END WHERE id =@id;
+
+-----------------------------------------
+-- c) List all courses in the system accepted by the admin so I can choose one to enroll( I can not view the course content (URLs to materials unless I enroll in the course). 
+GO 
+CREATE PROC availableCourses
+AS 
+SELECT c.name   FROM Course c where c.accepted = 1
+
+
+--------------------------------------------------------
