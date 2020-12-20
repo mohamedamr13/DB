@@ -149,7 +149,7 @@ Foreign Key(code) REFERENCES PromoCode ON DELETE NO ACTION ON UPDATE NO ACTION
 Create Table StudentRateInstructor(
 student_id int,
 instId int, 
-rate decimal(3,1),
+rate decimal(2,1),
 PRIMARY KEY(student_id,instId),
 FOREIGN KEY(student_id) REFERENCES Student ON DELETE CASCADE ON UPDATE CASCADE,
 FOREIGN KEY(instId) REFERENCES Instructor ON DELETE NO ACTION ON UPDATE NO ACTION)
