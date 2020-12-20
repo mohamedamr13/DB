@@ -503,4 +503,19 @@ if exists(select * from InstructorTeachCourse where @instrId=instId and @cid=cid
 update StudentTakeAssignment 
 set grade=@grade 
 where stid=@sid and cid=@cid and assignmentNumber=@assignmentNumber and assignmentType=@type
+---------------------------------------------
+go 
+create proc ViewFeedbacksAddedByStudentsOnMyCourse 
+@instrId int,
+@cid int 
+as
+if exists(select * from Course WHERE id=@cid and instructorId= @instrId)
+select number, comment,numberOfLikes 
+from feeddback 
+where @cid=cid
+----------------------------------------------------------------------------
+--K) is still missing 
+---------------------------------------------------------------------------------------------------
+
+
 
