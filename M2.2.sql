@@ -577,3 +577,61 @@ SELECT c.name   FROM Course c where c.accepted = 1
 
 
 --------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+-----------------------------------------------------------------------
+
+-- n) I can add feedback for the course I am enrolled in. Signature: Name: addFeedback 
+GO 
+CREATE PROC addFeedback
+@comment VARCHAR(100), @cid INT, @sid INT 
+AS
+declare @var int 
+SELECT @var = max(number) from Feedback where Feedback.cid = @cid
+IF EXISTS (  SELECT * FROM  StudentTakeCourse where cid = @cid AND stid  = @sid ) 
+BEGIN 
+
+IF EXISTS ( SELECT * FROM Feedback where cid = @cid )
+INSERT INTO Feedback ( number ,   student_id , cid , comments ) VALUES (@var + 1, @sid , @cid , @comment ) 
+ELSE
+INSERT INTO Feedback ( number ,   student_id , cid , comments ) VALUES ( 1, @sid , @cid , @comment ) 
+
+
+END 
+
+
+--------------------------------- 
+-- o) Rate the instructors of the course I am enrolled in. 
+ GO
+  CREATE PROC  rateInstructor 
+@rate DECIMAL (2,1), @sid INT, @insid INT
+AS
+if exists ( SELECT * FROM StudentTakeCourse s where s.instId =@insid AND s.stid = @sid )
+INSERT INTO StudentRateInstructor VALUES ( @sid , @insid , @rate ) 
+
+
+-------------------------------------------------------- 
+
+-- L )  List certificates (with all its information )issued to me for a course I had finished. 
+GO
+CREATE PROC viewCertificate
+@cid int , @sid int 
+AS
+SELECT * FROM StudentCertifyCourse WHERE cid = @cid AND sid = @sid
+
+----------------------------- 
+
+
+
+
