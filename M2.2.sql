@@ -118,7 +118,7 @@ PRIMARY KEY(stid,cid)
 
 create table Feedback(
 cid int,
-number int,
+number int default 0,
 comments varchar(60),
 numberOfLikes int,
 student_id int,
