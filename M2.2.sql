@@ -367,7 +367,140 @@ SET accepted = 1 , adminId = @adminID where Course.id= @courseID
 GO
 CREATE PROC AdminCreatePromocode 
 @code varchar(6), @issueDate datetime, @expiryDate datetime, @discount decimal(4,2), @adminId int 
-AS 
+AS --if exists
 INSERT INTO PromoCode values ( @code , @issueDate , @expiryDate , @discount , @adminId )
 
 ----------------------------------
+go
+create proc AdminListAllStudents 
+as
+select firstName,lastName
+from Student S INNER JOIN USERS U ON S.id=U.id
+go
+create Proc AdminListInstr
+as
+select * 
+from Instructor I INNER JOIN USERS U ON I.id=U.id
+
+-----------------------------------------------------------------------------------------
+go
+create proc AdminViewStudentProfile
+@sid int
+as
+SELECT* 
+FROM USERS U INNER JOIN Student S ON U.id=S.id
+where S.id=@sid
+
+----------------------------
+go 
+create proc AdminIssuePromocodeToStudent 
+@sid int, 
+@pid varchar(6) 
+as
+IF exists(Select * from PromoCode where code=@pid)
+INSERT INTO StudentHasPromocode values (@sid,@pid)
+
+------------------------
+go
+create Proc InstAddCourse
+@Credithours int ,
+@name varchar(10),
+@price decimal(6,2),
+@instructorId int
+as
+if exists(select * from Instructor where Instructor.id =@instructorId)
+Insert Into  Course(creditHours,name,price,instructorId) values (@Credithours,@name,@price,@instructorId)
+----------------------------------------
+go
+create Proc UpdateCourseContent 
+@instrId int,
+@courseId int ,
+@content varchar(20)
+as
+if exists(select * from Course WHERE id=@courseId and instructorId=@instrId)
+Update Course SET content=@content WHERE 
+@courseId=Course.id
+------------------------------------------
+go
+create Proc UpdateCourseDescription
+@instrId int,
+@courseId int ,
+@courseDescription varchar(200)
+as
+if exists(select * from Course WHERE id=@courseId and instructorId=@instrId)
+Update Course Set courseDescription=@courseDescription WHERE 
+Course.id=@courseId
+-----------------------------------------------
+go
+create Proc AddAnotherInstructorToCourse 
+@insid int,
+@cid int,
+@adderIns int
+as
+if exists(select * from Course WHERE id=@cid and instructorId=@adderIns) AND  exists(select * from Instructor WHERE id=@insid)
+Insert Into addIn values (@insid,@cid,@adderIns)
+---------------------------------------------------------
+go
+create Proc InstructorViewAcceptedCoursesByAdmin
+@instrId int
+as
+select * from Course where instructorId=@instrId and accepted=1
+----------------------
+go
+create Proc DefineCoursePrerequisits
+@cid int,
+@prerequisiteId int 
+as 
+if exists(select * from Course WHERE @cid=id)  AND exists (select * from Course WHERE @prerequisiteId = id)
+Insert Into CoursePrerequisiteCourse values (@cid,@prerequisiteId)
+--------------------------
+go
+create proc  DefineAssignmentOfCourseOfCertianType 
+ @instId int, @cid int , @number int, @type varchar(10), @fullGrade int, @weight decimal(4,1), @deadline datetime, @content varchar(200)
+ as
+ IF exists(SELECT * FROM InstructorTeachCourse where instId=@instId)
+ INSERT INTO Assignment VALUES(@cid,@number,@type,@fullGrade,@weight,@deadline,@content)
+ ----------------------------------------------------------
+ go
+create proc updateInstructorRate 
+ @insid int 
+ as 
+ DECLARE @var decimal(3,1)
+ SELECT @var= avg(rate)
+ from StudentRateInstructor
+
+ update Instructor
+ set rating =@var
+ where id=@insid
+ -----------------------
+ go
+ create proc ViewInstructorProfile 
+@instrId int
+as
+SELECT * FROM USERS U INNER JOIN Instructor I ON U.id=I.id
+                      INNER JOIN UserMobileNumber M ON I.id=m.id
+------------------------------------------------------------------------------------
+go
+create proc InstructorViewAssignmentsStudents
+@instrId int, 
+@cid int
+as
+if exists(select * from InstructorTeachCourse where instId=@InstrId and cid=@cid) 
+select * from StudentTakeAssignment
+
+---------------------------------------------------------------------------------
+go
+create proc InstructorgradeAssignmentOfAStudent 
+@instrId int, 
+@sid int , 
+@cid int, 
+@assignmentNumber int, 
+@type varchar(10), 
+@grade decimal(5,2)
+as
+declare @variable int 
+if exists(select * from InstructorTeachCourse where @instrId=instId and @cid=cid)
+update StudentTakeAssignment 
+set grade=@grade 
+where stid=@sid and cid=@cid and assignmentNumber=@assignmentNumber and assignmentType=@type
+
