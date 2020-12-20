@@ -18,7 +18,7 @@ address VARCHAR(25)
 
 CREATE TABLE Instructor (
 id int primary key ,
-rating int,
+rating decimal(2,1),
 FOREIGN KEY(id) REFERENCES Users ON DELETE CASCADE ON UPDATE CASCADE
 )
 
@@ -35,7 +35,7 @@ FOREIGN KEY(id) REFERENCES USERS ON DELETE CASCADE ON UPDATE CASCADE
 -----------------------------------------------------------------------------------------------------------------------------------
 CREATE TABLE Student(
 id int primary key,
-gpa float,
+gpa decimal(4,3),
 FOREIGN KEY(id) REFERENCES Users ON DELETE CASCADE ON UPDATE CASCADE
 )
 
@@ -149,7 +149,7 @@ Foreign Key(code) REFERENCES PromoCode ON DELETE NO ACTION ON UPDATE NO ACTION
 Create Table StudentRateInstructor(
 student_id int,
 instId int, 
-rate decimal(10,1),
+rate decimal(3,1),
 PRIMARY KEY(student_id,instId),
 FOREIGN KEY(student_id) REFERENCES Student ON DELETE CASCADE ON UPDATE CASCADE,
 FOREIGN KEY(instId) REFERENCES Instructor ON DELETE NO ACTION ON UPDATE NO ACTION)
@@ -183,6 +183,15 @@ FOREIGN KEY(instId) REFERENCES Instructor ON DELETE CASCADE ON UPDATE CASCADE,
 FOREIGN KEY(cid) REFERENCES Course ON DELETE NO ACTION ON UPDATE NO ACTION)
 
 -----------------------------------------------------------------------------------------------------------------------------------
+CREATE TABLE addIn(
+id int,
+cid int,
+Super_ID int,
+primary key(cid,Super_ID),
+FOREIGN KEY(id) REFERENCES Instructor.id ON DELETE CASCADE ON UPDATE CASCADE,
+FOREIGN KEY(cid) REFERENCES Course ON DELETE CASCADE ON UPDATE CASCADE,
+FOREIGN KEY(Super_ID) REFERENCES Instructor.id ON DELETE CASCADE ON UPDATE CASCADE
+-----------------------------------------------------------------------------------------------------------------------------------
 go 
 
 create proc studentRegister
@@ -199,7 +208,7 @@ INSERT INTO USERS (firstName,lastName,password,email,gender,address) values (@fi
 --select @variable=id
 --from USERS where USERS.email=@email
 
-INSERT INTO Student(id,gpa) values ( SCOPE_IDENTITY() ,NULL)
+INSERT INTO Student(id,gpa) values ( SCOPE_IDENTITY() ,0.00)
 
 --exec studentRegister 'alia','mohamed','mmm','alia.alia11@gmail.com',1,'aaa'
 
@@ -221,7 +230,7 @@ INSERT INTO USERS (firstName,lastName,password,email,gender,address) values (@fi
 --select @variable=id
 --from USERS where USERS.email=@email
 
-INSERT INTO Instructor(id,rating) values (SCOPE_IDENTITY(),NULL)
+INSERT INTO Instructor(id,rating) values (SCOPE_IDENTITY(),0.0)
 
 --exec InstructorRegister 'alia','mohamed','mmm','alia.alia@gmail.com',1,'aaa'
 
@@ -234,15 +243,15 @@ create proc userLogin
 @Success bit output , 
 @Type int output
 as
-DECLARE @variable int,
-@pass varchar(20)
-SET @variable=-1
+--DECLARE @variable int,
+--@pass varchar(20)
+--SET @variable=-1
 
 
-SELECT @variable=id , @pass=password
-from Users where id=@id and password=@password
+--SELECT @variable=id , @pass=password
+--from Users where id=@id and password=@password
 
-IF @variable = @id and @pass =@password
+IF exists(SELECT * FROM USERS where USERS.id=@id and Users.password =@password)
 BEGIN
 set @success=1
 
@@ -258,7 +267,10 @@ set @type = 0
 
 END
 ELSE 
+BEGIN
 set @success =0
+set @type =-1
+END
 
 --declare @success int, @type int 
 --exec userLogin 1,'mmm' ,@success output , @type output 
@@ -357,5 +369,63 @@ INSERT INTO PromoCode values ( @code , @issueDate , @expiryDate , @discount , @a
 
 
 
-------
-----
+--------------------------
+----)shows all records of students 
+go
+create proc AdminListAllStudents 
+as
+select firstName,lastName
+from Student S INNER JOIN USERS U ON S.id=U.id
+--------------------------------------------
+-------)show a specific student 
+go
+create proc AdminViewStudentProfile
+@sid int
+as
+SELECT* 
+FROM USERS U INNER JOIN Student S ON U.id=S.id
+where S.id=@sid
+--------------------------------------------------------
+-----) give a promocode to a student 
+go 
+create proc AdminIssuePromocodeToStudent 
+@sid int, 
+@pid varchar(6) 
+as
+IF exists(Select * from PromoCode where code=@pid)
+INSERT INTO StudentHasPromocode values (@sid,@pid)
+
+--------------------------------------------------
+
+
+
+
+
+
+
+
+------------) define an assignment fopr a course and check if the instructor teaches this course 
+go
+create proc  DefineAssignmentOfCourseOfCertianType 
+ @instId int, @cid int , @number int, @type varchar(10), @fullGrade int, @weight decimal(4,1), @deadline datetime, @content varchar(200)
+ as
+ IF exists(SELECT * FROM InstructorTeachCourse where instId=@instId)
+ INSERT INTO Assignment VALUES(@cid,@number,@type,@fullGrade,@weight,@deadline,@content)
+ -----------------------------------------------
+ ---------------------) calculate the average rate of an instructor 
+ go
+create proc updateInstructorRate 
+ @insid int 
+ as 
+ DECLARE @var decimal(3,1)
+ SELECT @var= avg(rate)
+ from StudentRateInstructor
+
+ update Instructor
+ set rating =@var
+ where id=@insid
+ ------------------------
+ 
+
+
+
