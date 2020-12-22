@@ -516,7 +516,7 @@ from feeddback
 where @cid=cid
 ----------------------------------------------------------------------------
 ----revise because in test cases they didn't divide by the final grade
-go 
+ go 
 create proc calculateFinalGrade
 @cid int , 
 @sid int , 
@@ -524,13 +524,13 @@ create proc calculateFinalGrade
 as 
 DECLARE @variable  decimal(4,2) 
 if exists(Select * from InstructorTeachCourse where instId=@insId and @cid=cid)
-
+BEGIN
  select @variable= Sum (Grade)
  from ( select s.grade*a.Assign_weight as Grade,a.cid,a.Assign_type,a.number
   from Assignment a INNER JOIN StudentTakeAssignment s on (a.Assign_type = s.assignmentType AND a.number = s.assignmentNumber AND 
-  a.cid = s.cid ) where s.stid=7 and a.cid=1 ) AS Total
- 
- 
+  a.cid = s.cid ) where s.stid=@sid and a.cid=@cid ) AS Total
+END
+
  Update  StudentTakeCourse 
   Set grade=@variable
   Where cid=@cid and stid=@sid and instId=@insId
