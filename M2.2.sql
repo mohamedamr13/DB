@@ -608,7 +608,38 @@ SELECT c.name   FROM Course c where c.accepted = 1
 
 
 --------------------------------------------------------
+go 
+create Proc courseInformation 
+@id int 
+as
+select C.*,U.firstName , U.lastName
+From Course C inner join Users U On C.instructorId =U.id
+where instructorId=@id
 
+--------------------------------------------------------
+go 
+create Proc enrollInCourse
+@sid INT, @cid INT, @instr int 
+as
+if exists(select* from course where course.id =@cid and course.instructorId =@instr)
+Insert into StudentTakeCourse(stid,cid,instId) values (@sid ,@cid,@instr)
+---------------------------------------------------------------------------
+go
+create Proc addCreditCard 
+@sid int, @number varchar(15), @cardHolderName varchar(16), @expiryDate datetime, @cvv varchar(3) 
+as
+Insert into CreditCard values(@number,@cardHolderName,@expiryDate,@cvv)
+Insert into StudentAddCreditCard values(@sid,@number)
+-----------------------------------------------------------------
+
+go 
+create Proc  viewPromocode 
+@sid int 
+as
+select p.* from
+PromoCode p inner join StudentHasPromocode c ON p.code=c.code
+WHERE c.student_id=@sid
+--------------------------------------------------------------------------
 
 
 
