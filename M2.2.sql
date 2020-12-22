@@ -88,7 +88,7 @@ stid int REFERENCES Student ON DELETE CASCADE ON UPDATE CASCADE,
 cid int REFERENCES Course ON DELETE NO ACTION ON UPDATE NO ACTION,
 instId int  REFERENCES Instructor ON DELETE NO ACTION ON UPDATE NO ACTION,
 payedfor bit ,
-grade smallint,
+grade smallint, -- change it to decimal (4,2)
 PRIMARY KEY(stid,cid,instId) 
 )
 
@@ -158,7 +158,7 @@ FOREIGN KEY(instId) REFERENCES Instructor ON DELETE NO ACTION ON UPDATE NO ACTIO
 Create Table StudentCertifyCourse(
 student_id int,
 cid int,
-issueDate int,
+issueDate datetime,
 PRIMARY KEY (student_id,cid),
 FOREIGN KEY(student_id) REFERENCES Student ON DELETE CASCADE ON UPDATE CASCADE, 
 FOREIGN KEY (cid) REFERENCES Course ON DELETE NO ACTION ON UPDATE NO ACTION)
@@ -286,7 +286,8 @@ END
 
 go
 create proc addMobile
-@ID varchar(20),
+@ID int ,
+--answered on piazza int not varchar
 @mobile_number varchar(20)
 as
 DECLARE @variable int
@@ -514,10 +515,40 @@ select number, comment,numberOfLikes
 from feeddback 
 where @cid=cid
 ----------------------------------------------------------------------------
---K) is still missing 
+----revise because in test cases they didn't divide by the final grade
+go 
+create proc calculateFinalGrade
+@cid int , 
+@sid int , 
+@insId int
+as 
+DECLARE @variable  decimal(4,2) 
+if exists(Select * from InstructorTeachCourse where instId=@insId and @cid=cid)
+
+ select @variable= Sum (Grade)
+ from ( select s.grade*a.Assign_weight as Grade,a.cid,a.Assign_type,a.number
+  from Assignment a INNER JOIN StudentTakeAssignment s on (a.Assign_type = s.assignmentType AND a.number = s.assignmentNumber AND 
+  a.cid = s.cid ) where s.stid=7 and a.cid=1 ) AS Total
+ 
+ 
+ Update  StudentTakeCourse 
+  Set grade=@variable
+  Where cid=@cid and stid=@sid and instId=@insId
 ---------------------------------------------------------------------------------------------------
 
+go
 
+create proc InstructorIssueCertificateToStudent 
+@cid int , @sid int , @insId int, @issueDate datetime 
+As
+declare @variable decimal (4,2)
+if exists(Select * from StudentTakeCourse where cid=@cid and stid=@sid and instId=@insId)
+BEGIN 
+Select @variable=grade
+from StudentTakeCourse
+If(@variable >=50)
+    Insert into StudentCertifyCourse values (@sid,@cid,@issueDate)
+    END
 
 
 --------------------------------- STUDENT -----------------------------
