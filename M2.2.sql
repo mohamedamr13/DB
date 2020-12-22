@@ -88,7 +88,7 @@ stid int REFERENCES Student ON DELETE CASCADE ON UPDATE CASCADE,
 cid int REFERENCES Course ON DELETE NO ACTION ON UPDATE NO ACTION,
 instId int  REFERENCES Instructor ON DELETE NO ACTION ON UPDATE NO ACTION,
 payedfor bit ,
-grade smallint, -- change it to decimal (4,2)
+grade decimal (4,2), -- change it to decimal (4,2)
 PRIMARY KEY(stid,cid,instId) 
 )
 
