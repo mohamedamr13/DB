@@ -718,17 +718,24 @@ as
 if exists(select * from StudentTakeAssignment where @sid=stid and @cid=cid)
 insert into StudentTakeAssignment (stid, cid, assignmentNumber, assignmentType) values (@sid, @cid, @assignnumber, @assignType)
 -------------------------------------------------------------------------------------------------------------------
-go
+   go
 create proc viewAssignGrades
 @assignnumber int, 
 @assignType VARCHAR(10), 
 @cid INT, 
 @sid INT,
-@assignGrade INT output
+@assignGrade int output
 as
+
 if exists(select * from StudentTakeAssignment STA where @sid=stid and @cid=cid and @assignnumber=assignmentNumber and @assignType=assignmentType)
-set @assignGrade=STA.grade --why wont it work
----I think we need to add where condition-nerimane
+ 
+ select @assignGrade=grade from StudentTakeAssignment where @sid=stid and @cid=cid and @assignnumber=assignmentNumber and @assignType=assignmentType
+
+ --drop proc viewAssignGrades
+
+ --declare @assignGrade int 
+ --exec viewAssignGrades 1,'quiz',1,7 ,@assignGrade output
+ --print @assignGrade
 --------------------------------------------------------
 go 
 create proc viewFinalGrade
@@ -737,8 +744,7 @@ create proc viewFinalGrade
 @finalgrade decimal(10,2) output
 as
 if exists(select * from StudentTakeCourse STA where @cid=cid and @sid=stid)
-set @finalgrade=STA.grade --same thing here 
---I think we need to add the where condition-nerimane
+select @finalgrade=grade from StudentTakeCourse where @cid=cid and @sid=stid
 
 -----------------------------------------------------------------------
 
