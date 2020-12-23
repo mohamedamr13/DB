@@ -512,7 +512,7 @@ create proc updateInstructorRate
 @instrId int
 as
 SELECT * FROM USERS U INNER JOIN Instructor I ON U.id=I.id
-                      INNER JOIN UserMobileNumber M ON I.id=m.id
+                      Left JOIN UserMobileNumber M ON I.id=M.id where U.id = @instrId
 ------------------------------------------------------------------------------------
 go
 create proc InstructorViewAssignmentsStudents
