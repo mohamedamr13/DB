@@ -1,7 +1,7 @@
-Create Database GUCeraaMS2_6
+Create Database GUCeraaMS2_7
 
 go
-use GUCeraaMS2_6
+use GUCeraaMS2_7
 
 CREATE TABLE USERS(
 id int primary key identity,
@@ -27,15 +27,17 @@ FOREIGN KEY(id) REFERENCES Users ON DELETE CASCADE ON UPDATE CASCADE
 -----------------------------------------------------------------------------------------------------------------------------------
 CREATE TABLE UserMobileNumber(
 id int ,
-mobileNumber int,
+mobileNumber VARCHAR(20),
 PRIMARY KEY(id,mobileNumber),
 FOREIGN KEY(id) REFERENCES USERS ON DELETE CASCADE ON UPDATE CASCADE
 )
 
+drop table UserMobileNumber
+
 -----------------------------------------------------------------------------------------------------------------------------------
 CREATE TABLE Student(
 id int primary key,
-gpa decimal(4,3),
+gpa decimal(3,2),
 FOREIGN KEY(id) REFERENCES Users ON DELETE CASCADE ON UPDATE CASCADE
 )
 
@@ -52,7 +54,7 @@ CREATE TABLE Course(
 id int primary key identity,
 creditHours int,
 name VARCHAR(25),
-courseDescription VARCHAR(100),
+courseDescription VARCHAR(200),
 price int,
 content VARCHAR(100),
 accepted bit,
@@ -62,6 +64,8 @@ FOREIGN KEY(adminId) REFERENCES admins ON DELETE CASCADE ON UPDATE CASCADE,
 FOREIGN KEY(instructorId) REFERENCES Instructor ON DELETE NO ACTION ON UPDATE NO ACTION 
 )
 
+ALTER TABLE Course 
+ALTER COLUMN courseDescription VARCHAR (200)
 
 -----------------------------------------------------------------------------------------------------------------------------------
 
@@ -97,14 +101,15 @@ PRIMARY KEY(stid,cid,instId)
 create table Assignment(
 cid int,
 number int,
-Assign_type varchar(25),
+Assign_type varchar(10),
 fullGrade int,
-Assign_weight decimal(4,2),
+Assign_weight decimal(4,1),
 deadline datetime,
-content text,
+content VARCHAR(200),
 Primary Key(cid, number, Assign_type),
 Foreign Key(cid) REFERENCES Course ON DELETE CASCADE ON UPDATE CASCADE
 )
+ 
 -----------------------------------------------------------------------------------------------------------------------------------
 CREATE TABLE StudentTakeAssignment(
 stid int REFERENCES Student ON DELETE CASCADE ON UPDATE CASCADE,
@@ -213,12 +218,12 @@ INSERT INTO USERS (firstName,lastName,password,email,gender,address) values (@fi
 DECLARE @var int
 Set @var = SCOPE_IDENTITY()
 
-INSERT INTO UserMobileNumber VALUES ( @var , 'NULL' ) 
+--INSERT INTO UserMobileNumber VALUES ( @var , 'NULL' ) 
 
 INSERT INTO Student(id,gpa) values ( @var  ,0.00)
 
 --exec studentRegister 'alia','mohamed','mmm','alia.alia11@gmail.com',1,'aaa'
---drop PROC studentRegister
+drop PROC studentRegister
 --SELECT * FROM USERS
 
 go 
@@ -233,15 +238,17 @@ create proc InstructorRegister
 as
 --DECLARE @variable int
 
-DECLARE @var int
-Set @var = SCOPE_IDENTITY()
 
 INSERT INTO USERS (firstName,lastName,password,email,gender,address) values (@first_name,@last_name,@password,@email,@gender,@address)
 --select @variable=id
 --from USERS where USERS.email=@email
-INSERT INTO UserMobileNumber VALUES ( @var , 'NULL' ) 
+--INSERT INTO UserMobileNumber VALUES ( @var , 'NULL' ) 
 
-INSERT INTO Instructor(id,rating) values (@var,0.00)
+
+DECLARE @var int
+Set @var = SCOPE_IDENTITY()
+
+INSERT INTO Instructor(id,rating) values (@var,0.0)
 
 --exec InstructorRegister 'alia','mohamed','mmm','alia.alia@gmail.com',1,'aaa'
 DROP PROC InstructorRegister
@@ -312,9 +319,9 @@ INSERT INTO UserMobileNumber Values (@id,@mobile_number)
 go
 create Proc AdminListInstr
 as
-select * 
+select U.firstName , U.lastName 
 from Instructor I INNER JOIN USERS U ON I.id=U.id
-
+drop PROC AdminListInstr
 -----------------------------------------------------------
 
 -- ) view the profile of any instructor that contains all his/her information. 
@@ -322,10 +329,10 @@ go
 CREATE PROC AdminViewInstructorProfile
 @instrID int
 AS
-SELECT * FROM Instructor i inner join USERS u 
-              on i.id = u.id where i.id = @instrID
+SELECT  u.firstName , u.lastName , u.email , u.gender , u.address , i.rating FROM Instructor i inner join USERS u 
+              on i.id = u.id  where i.id = @instrID
 
-
+drop proc AdminViewInstructorProfile
 --exec studentRegister 'alia','mohamed','mmm','alia@gmail.com',1,'aaa'
 
 --EXEC AdminViewInstructorProfile 1
@@ -336,15 +343,18 @@ SELECT * FROM Instructor i inner join USERS u
 go 
 CREATE PROC AdminViewAllCourses
 AS 
-select * from Course
+select name , creditHours , price , content , accepted from Course
 
+--drop proc AdminViewAllCourses
 
 --------------------------
 -- d) List all the courses added by instructors not yet accepted. 
 GO 
 CREATE PROC AdminViewNonAcceptedCourses 
 AS
-SELECT * FROM Course where Course.accepted = 0 
+SELECT name , content , price , creditHours FROM Course where Course.accepted IS NULL
+
+--DROP PROC AdminViewNonAcceptedCourses
 
 ----------------------------
 
@@ -354,7 +364,8 @@ go
 CREATE PROC AdminViewCourseDetails
 @courseId int
 as 
-SELECT * FROM Course where Course.id = @courseId
+SELECT name , creditHours , price , content , accepted FROM Course where Course.id = @courseId
+DROP PROC AdminViewCourseDetails
 
 --INSERT INTO COURSE ( name ) VALUES ( 'databases') 
 
@@ -368,9 +379,11 @@ Create PROC AdminAcceptRejectCourse
 @courseID int 
 AS
 UPDATE Course
-SET accepted = 1 , adminId = @adminID where Course.id= @courseID
+SET accepted = 1   where Course.id= @courseID
+UPDATE Course
+SET  adminId = @adminID where Course.id= @courseID
 
-
+drop PROC AdminAcceptRejectCourse
 
 ------------------------------
 GO
@@ -397,10 +410,11 @@ go
 create proc AdminViewStudentProfile
 @sid int
 as
-SELECT* 
-FROM USERS U INNER JOIN Student S ON U.id=S.id
+SELECT u.firstName , u.lastName , u.gender ,  u.email   , u.address , S.gpa
+FROM USERS u INNER JOIN Student S ON U.id=S.id
 where S.id=@sid
 
+--drop proc AdminViewStudentProfile 
 ----------------------------
 go 
 create proc AdminIssuePromocodeToStudent 
@@ -410,7 +424,7 @@ as
 IF exists(Select * from PromoCode where code=@pid) AND EXISTS ( SELECT * FROM Student where id= @sid )
 INSERT INTO StudentHasPromocode values (@sid,@pid)
 
-drop proc AdminIssuePromocodeToStudent
+--drop proc AdminIssuePromocodeToStudent
 
 ------------------------
 
@@ -472,25 +486,30 @@ create Proc InstructorViewAcceptedCoursesByAdmin
 @instrId int
 as
 IF EXISTS ( SELECT * FROM InstructorTeachCourse WHERE instId = @instrId ) 
-SELECT * FROM Course inner join InstructorTeachCourse on instructorId = instId WHERE instId=@instrId and accepted=1
+SELECT instructorId , name , creditHours FROM Course inner join InstructorTeachCourse on instructorId = instId WHERE instId=@instrId and accepted=1
 
---drop PROC AddAnotherInstructorToCourse
+drop PROC InstructorViewAcceptedCoursesByAdmin
 
 ----------------------
 go
-create Proc DefineCoursePrerequisits
+create Proc DefineCoursePrerequisites
 @cid int,
 @prerequisiteId int 
 as 
 if exists(select * from Course WHERE @cid=id)  AND exists (select * from Course WHERE @prerequisiteId = id)
 Insert Into CoursePrerequisiteCourse values (@cid,@prerequisiteId)
+
+drop proc DefineCoursePrerequisits
 --------------------------
 go
 create proc  DefineAssignmentOfCourseOfCertianType 
  @instId int, @cid int , @number int, @type varchar(10), @fullGrade int, @weight decimal(4,1), @deadline datetime, @content varchar(200)
  AS
- IF exists(SELECT * FROM InstructorTeachCourse where instId=@instId)
+ IF exists(SELECT * FROM InstructorTeachCourse where instId=@instId AND cid = @cid) AND @type in ( 'Quiz' , 'Project','Exam' ) 
  INSERT INTO Assignment VALUES(@cid,@number,@type,@fullGrade,@weight,@deadline,@content)
+
+ drop proc DefineAssignmentOfCourseOfCertianType
+
  ----------------------------------------------------------
  go
 create proc updateInstructorRate 
@@ -511,8 +530,9 @@ create proc updateInstructorRate
  create proc ViewInstructorProfile 
 @instrId int
 as
-SELECT * FROM USERS U INNER JOIN Instructor I ON U.id=I.id
+SELECT firstName , lastName , address , rating ,  mobileNumber , gender , email FROM USERS U INNER JOIN Instructor I ON U.id=I.id
                       Left JOIN UserMobileNumber M ON I.id=M.id where U.id = @instrId
+
 ------------------------------------------------------------------------------------
 go
 create proc InstructorViewAssignmentsStudents
@@ -548,7 +568,7 @@ select number , comments , numberOfLikes
 from Feedback 
 where @cid=cid
 
- drop PROC ViewFeedbacksAddedByStudentsOnMyCourse
+ --drop PROC ViewFeedbacksAddedByStudentsOnMyCourse
 
 ----------------------------------------------------------------------------
 ----revise because in test cases they didn't divide by the final grade
@@ -690,7 +710,11 @@ create proc payCourse
 as 
 if exists(select * from StudentAddCreditCard where @sid=stid) and exists(select * from StudentTakeCourse where @cid=cid and @sid=stid) 
         and exists(select * from StudentHasPromocode where @sid=student_id)
-insert into StudentTakeCourse (stid, cid, payedfor) values (@sid, @cid, 1)
+
+UPDATE StudentTakeCourse    SET payedfor = 1 
+where stid = @sid AND cid = @cid
+
+drop proc payCourse
 -------------------------------------------------------------------------------------------------
 go 
 create proc enrollInCourseViewContent
@@ -773,10 +797,10 @@ END
   CREATE PROC  rateInstructor 
 @rate DECIMAL (2,1), @sid INT, @insid INT
 AS
-if exists ( SELECT * FROM StudentTakeCourse s where s.instId =@insid AND s.stid = @sid )
+if exists ( SELECT * FROM StudentTakeCourse s where  s.stid = @sid  AND instId =@insid )
 INSERT INTO StudentRateInstructor VALUES ( @sid , @insid , @rate ) 
 
-
+drop proc rateInstructor
 -------------------------------------------------------- 
 
 -- L )  List certificates (with all its information )issued to me for a course I had finished. 
@@ -788,6 +812,136 @@ SELECT * FROM StudentCertifyCourse WHERE cid = @cid AND sid = @sid
 
 ----------------------------- 
 
+-- TESTING
 
+
+-- Register Student 
+
+exec studentRegister 'ali','ahmed','mmm','ali@gmail.com',1,'aaa'
+
+select * from USERS
+
+exec InstructorRegister 'I','4','mmm','@gmail',1,'aaa'
+
+DELETE FROM USERS where  id = 3 OR id = 4
+
+-------------------------------------- USER LOGIN ----------------------------
+
+DECLARE @succ bit 
+DECLARE @type int
+
+EXEC userLogin  5,'mmm' , @succ OUTPUT , @type OUTPUT
+
+PRINT @succ 
+PRINT @type
+
+---------------------------------   Add Mobile Number     ---------------------------------------
+
+EXEC addMobile 16 , '010'
+
+select * from UserMobileNumber
+
+
+
+--------------------------------   Addmin List Inst ----------------------- 
+EXEC AdminListInstr
+
+
+
+--------------------------------   Addmin VIEW Profile Inst ----------------------- 
+EXEC AdminViewInstructorProfile 5
+
+--------------------------------   Instr add Course ----------------------- 
+
+EXEC InstAddCourse 4 ,  'Math 5' , 1000.50 , 6
+select * from InstructorTeachCourse
+
+--------------------------------  AdminViewAllCourses ----------------------- 
+EXEC AdminViewAllCourses
+
+--------------------------------  AdminViewNonAcceptedCourses ----------------------- 
+EXEC AdminViewNonAcceptedCourses
+
+--------------------------------  AdminViewCourseDetails ----------------------- 
+
+EXEC AdminViewCourseDetails 1
+
+-------------------------------- AdminAcceptRejectCourse ---------------------------
+INSERT INTO USERS DEFAULT VALUES 
+INSERT INTO Admins VALUES ( 8 )
+select * from Admins
+EXEC AdminAcceptRejectCourse 8 , 1
+
+
+-------------------------------- AdminCreatePromocode ---------------------------
+
+EXEC AdminCreatePromocode '123456' , '1-1-2000' , '1-1-2020' , 50.5 , 8
+
+SELECT * FROM PromoCode
+
+-------------------------------- AdminListAllStudents ---------------------------
+exec AdminListAllStudents
+
+-------------------------------- AdminViewStudentProfile ---------------------------
+EXEC AdminViewStudentProfile 3
+
+
+-------------------------------- AdminIssuePromocodeToStudent ------------
+
+EXEC AdminIssuePromocodeToStudent 2 , '123456'
+
+select * from InstructorTeachCourse
+
+
+-------------------------------- AddAnotherInstructorToCourse ----------------
+EXEC AddAnotherInstructorToCourse 6  , 1 , 5
+select * from addIn
+select * from InstructorTeachCourse
+-------------------------------- UpdateCourseContent ------------
+exec UpdateCourseContent 6  , 1 , ' DB is like shit on icecream'
+
+select * from Course where id =1
+
+------------------------------- UpdateCourseDescription ------------------
+exec UpdateCourseDescription 6  , 1 , 'Nada hatal3 mayeteen abokoo'
+select * from Course where id =1
+
+------------------------------- InstructorViewAcceptedCoursesByAdmin -------------
+EXEC InstructorViewAcceptedCoursesByAdmin 5
+
+
+------------------------------- DefineCoursePrerequisites -------------
+SELECT * FROM Course
+
+EXEC DefineCoursePrerequisites 2,1
+select * from CoursePrerequisiteCourse
+
+------------------------------- DefineAssignmentOfCourseOfCertianType -------------
+
+EXEC DefineAssignmentOfCourseOfCertianType 6 , 1 , 1 , 'Quiz' , 15 , 15 , '1-1-2021' , 'Why Nada?'
+EXEC DefineAssignmentOfCourseOfCertianType 5 , 2 , 1 , 'Quiz' , 15 , 15 , '1-1-2021' , 'Why Nada?'
+
+
+
+------------------------------- Student.enrollInCourse -------------
+
+EXEC enrollInCourse 9 ,1,5
+------------------------------- Student.rateInstructor -------------
+select * from USERS
+
+EXEC rateInstructor 9 , 9 ,5
+
+
+---------------------------  updateInstructorRate ----------
+exec studentRegister 'ali2','ahmed','mmm','ali@gmail.com',1,'aaa'
+
+
+EXEC updateInstructorRate 5
+
+SELECT * FROM UserMobileNumber 
+
+-------------------------   ViewInstructorProfile ---------------
+
+EXEC ViewInstructorProfile 6
 
 
