@@ -578,7 +578,7 @@ create proc InstructorIssueCertificateToStudent
 @cid int , @sid int , @insId int, @issueDate datetime 
 As
 declare @variable decimal (4,2)
-if exists(Select * from StudentTakeCourse where cid=@cid and stid=@sid and instId=@insId) -- INST WHO ADDED COURSE OR WHO TEACHES COURSE
+if exists(Select * from StudentTakeCourse where cid=@cid and stid=@sid ) AND EXISTS ( SELECT * FROM InstructorTeachCourse where instId=@insId) 
 BEGIN 
 Select @variable=grade
 from StudentTakeCourse
