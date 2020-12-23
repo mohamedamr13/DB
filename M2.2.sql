@@ -683,17 +683,62 @@ select p.* from
 PromoCode p inner join StudentHasPromocode c ON p.code=c.code
 WHERE c.student_id=@sid
 --------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
+go
+create proc payCourse
+@cid int,
+@sid int
+as 
+if exists(select * from StudentAddCreditCard where @sid=stid) and exists(select * from StudentTakeCourse where @cid=cid and @sid=stid) 
+        and exists(select * from StudentHasPromocode where @sid=student_id)
+insert into StudentTakeCourse (stid, cid, payedfor) values (@sid, @cid, 1)
+-------------------------------------------------------------------------------------------------
+go 
+create proc enrollInCourseViewContent
+@id int, 
+@cid int
+as
+if exists(select * from StudentTakeCourse where @id=stid and @cid=cid)
+select id, creditHours, name, courseDescription, price, content from Course
+------------------------------------------------------------------------
+go
+create proc viewAssign
+@courseId int, 
+@Sid int
+as
+if exists ( select * from StudentTakeAssignment where @Sid=stid and @courseId=cid)
+select * from Assignment
+--------------------------------------------------------------------------
+go
+create proc submitAssign 
+@assignType VARCHAR(10), 
+@assignnumber int, 
+@sid INT, 
+@cid INT 
+as
+if exists(select * from StudentTakeAssignment where @sid=stid and @cid=cid)
+insert into StudentTakeAssignment (stid, cid, assignmentNumber, assignmentType) values (@sid, @cid, @assignnumber, @assignType)
+-------------------------------------------------------------------------------------------------------------------
+go
+create proc viewAssignGrades
+@assignnumber int, 
+@assignType VARCHAR(10), 
+@cid INT, 
+@sid INT,
+@assignGrade INT output
+as
+if exists(select * from StudentTakeAssignment STA where @sid=stid and @cid=cid and @assignnumber=assignmentNumber and @assignType=assignmentType)
+set @assignGrade=STA.grade --why wont it work
+---I think we need to add where condition-nerimane
+--------------------------------------------------------
+go 
+create proc viewFinalGrade
+@cid INT, 
+@sid INT,
+@finalgrade decimal(10,2) output
+as
+if exists(select * from StudentTakeCourse STA where @cid=cid and @sid=stid)
+set @finalgrade=STA.grade --same thing here 
+--I think we need to add the where condition-nerimane
 
 -----------------------------------------------------------------------
 
