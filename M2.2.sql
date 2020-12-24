@@ -1,7 +1,7 @@
-Create Database GUCeraaMS2_7
+Create Database GUCeraaMS2_8
 
 go
-use GUCeraaMS2_7
+use GUCeraaMS2_8
 
 CREATE TABLE USERS(
 id int primary key identity,
@@ -32,7 +32,7 @@ PRIMARY KEY(id,mobileNumber),
 FOREIGN KEY(id) REFERENCES USERS ON DELETE CASCADE ON UPDATE CASCADE
 )
 
-drop table UserMobileNumber
+--drop table UserMobileNumber
 
 -----------------------------------------------------------------------------------------------------------------------------------
 CREATE TABLE Student(
@@ -64,8 +64,8 @@ FOREIGN KEY(adminId) REFERENCES admins ON DELETE CASCADE ON UPDATE CASCADE,
 FOREIGN KEY(instructorId) REFERENCES Instructor ON DELETE NO ACTION ON UPDATE NO ACTION 
 )
 
-ALTER TABLE Course 
-ALTER COLUMN courseDescription VARCHAR (200)
+--ALTER TABLE Course 
+--ALTER COLUMN courseDescription VARCHAR (200)
 
 -----------------------------------------------------------------------------------------------------------------------------------
 
@@ -96,6 +96,9 @@ grade decimal (4,2), -- change it to decimal (4,2)
 PRIMARY KEY(stid,cid,instId) 
 )
 
+alter table StudentTakeCourse 
+alter column grade decimal(10,2)
+
 -----------------------------------------------------------------------------------------------------------------------------------
  
 create table Assignment(
@@ -113,23 +116,25 @@ Foreign Key(cid) REFERENCES Course ON DELETE CASCADE ON UPDATE CASCADE
 -----------------------------------------------------------------------------------------------------------------------------------
 CREATE TABLE StudentTakeAssignment(
 stid int REFERENCES Student ON DELETE CASCADE ON UPDATE CASCADE,
-cid int , assignmentNumber int , assignmentType varchar(25) ,
+cid int , assignmentNumber int , assignmentType varchar(10) ,
 grade decimal(5,2) ,
 PRIMARY KEY(stid,cid , assignmentNumber , assignmentType) ,
 FOREIGN KEY ( cid , assignmentNumber , assignmentType ) REFERENCES Assignment ON DELETE NO ACTION ON UPDATE NO ACTION
 )
+
 -----------------------------------------------------------------------------------------------------------------------------------
 
 create table Feedback(
 cid int,
 number int default 0,
 comments varchar(60),
-numberOfLikes int,
+numberOfLikes int default 0,
 student_id int,
 Primary Key(cid, number),
 Foreign key(cid) REFERENCES Course ON DELETE CASCADE ON UPDATE CASCADE,
 Foreign Key(student_id) REFERENCES Student ON DELETE NO ACTION ON UPDATE NO ACTION
 )
+
 -----------------------------------------------------------------------------------------------------------------------------------
 create table PromoCode(
 code varchar(20) Primary Key,
@@ -223,7 +228,7 @@ Set @var = SCOPE_IDENTITY()
 INSERT INTO Student(id,gpa) values ( @var  ,0.00)
 
 --exec studentRegister 'alia','mohamed','mmm','alia.alia11@gmail.com',1,'aaa'
-drop PROC studentRegister
+--drop PROC studentRegister
 --SELECT * FROM USERS
 
 go 
@@ -251,7 +256,7 @@ Set @var = SCOPE_IDENTITY()
 INSERT INTO Instructor(id,rating) values (@var,0.0)
 
 --exec InstructorRegister 'alia','mohamed','mmm','alia.alia@gmail.com',1,'aaa'
-DROP PROC InstructorRegister
+--DROP PROC InstructorRegister
 
 
 go 
@@ -321,7 +326,7 @@ create Proc AdminListInstr
 as
 select U.firstName , U.lastName 
 from Instructor I INNER JOIN USERS U ON I.id=U.id
-drop PROC AdminListInstr
+--drop PROC AdminListInstr
 -----------------------------------------------------------
 
 -- ) view the profile of any instructor that contains all his/her information. 
@@ -332,7 +337,7 @@ AS
 SELECT  u.firstName , u.lastName , u.email , u.gender , u.address , i.rating FROM Instructor i inner join USERS u 
               on i.id = u.id  where i.id = @instrID
 
-drop proc AdminViewInstructorProfile
+--drop proc AdminViewInstructorProfile
 --exec studentRegister 'alia','mohamed','mmm','alia@gmail.com',1,'aaa'
 
 --EXEC AdminViewInstructorProfile 1
@@ -365,7 +370,7 @@ CREATE PROC AdminViewCourseDetails
 @courseId int
 as 
 SELECT name , creditHours , price , content , accepted FROM Course where Course.id = @courseId
-DROP PROC AdminViewCourseDetails
+--DROP PROC AdminViewCourseDetails
 
 --INSERT INTO COURSE ( name ) VALUES ( 'databases') 
 
@@ -378,11 +383,13 @@ Create PROC AdminAcceptRejectCourse
 @adminID int ,
 @courseID int 
 AS
+if ( exists ( Select * from Admins where id = @adminID ) )
+BEGIN
 UPDATE Course
 SET accepted = 1   where Course.id= @courseID
 UPDATE Course
 SET  adminId = @adminID where Course.id= @courseID
-
+END
 drop PROC AdminAcceptRejectCourse
 
 ------------------------------
@@ -390,6 +397,7 @@ GO
 CREATE PROC AdminCreatePromocode 
 @code varchar(6), @issueDate datetime, @expiryDate datetime, @discount decimal(4,2), @adminId int 
 AS --if exists
+if ( exists ( Select * from Admins where id = @adminID ) )
 INSERT INTO PromoCode values ( @code , @issueDate , @expiryDate , @discount , @adminId )
 
 ----------------------------------
@@ -488,7 +496,7 @@ as
 IF EXISTS ( SELECT * FROM InstructorTeachCourse WHERE instId = @instrId ) 
 SELECT instructorId , name , creditHours FROM Course inner join InstructorTeachCourse on instructorId = instId WHERE instId=@instrId and accepted=1
 
-drop PROC InstructorViewAcceptedCoursesByAdmin
+--drop PROC InstructorViewAcceptedCoursesByAdmin
 
 ----------------------
 go
@@ -499,16 +507,22 @@ as
 if exists(select * from Course WHERE @cid=id)  AND exists (select * from Course WHERE @prerequisiteId = id)
 Insert Into CoursePrerequisiteCourse values (@cid,@prerequisiteId)
 
-drop proc DefineCoursePrerequisits
+--drop proc DefineCoursePrerequisits
 --------------------------
 go
 create proc  DefineAssignmentOfCourseOfCertianType 
  @instId int, @cid int , @number int, @type varchar(10), @fullGrade int, @weight decimal(4,1), @deadline datetime, @content varchar(200)
  AS
- IF exists(SELECT * FROM InstructorTeachCourse where instId=@instId AND cid = @cid) AND @type in ( 'Quiz' , 'Project','Exam' ) 
+ IF exists(SELECT * FROM InstructorTeachCourse where instId=@instId AND cid = @cid) AND @type in ( 'Quiz' , 'Project','Exam' )
+ BEGIN 
+ DECLARE @var bit
+ select @var=accepted from Course where id=@cid
+ IF(@var=1)
  INSERT INTO Assignment VALUES(@cid,@number,@type,@fullGrade,@weight,@deadline,@content)
+ END
 
- drop proc DefineAssignmentOfCourseOfCertianType
+
+ --drop proc DefineAssignmentOfCourseOfCertianType
 
  ----------------------------------------------------------
  go
@@ -540,8 +554,7 @@ create proc InstructorViewAssignmentsStudents
 @cid int
 as
 if exists(select * from InstructorTeachCourse where instId=@InstrId and cid=@cid) 
-select * from StudentTakeAssignment
-
+select stid , cid , assignmentNumber , assignmentType from StudentTakeAssignment
 ---------------------------------------------------------------------------------
 go
 create proc InstructorgradeAssignmentOfAStudent 
@@ -553,11 +566,16 @@ create proc InstructorgradeAssignmentOfAStudent
 @grade decimal(5,2)
 as
 declare @variable int 
+declare @fullGrade int
+SELECT @fullGrade = fullGrade   FROM Assignment WHERE cid = @cid AND @assignmentNumber = number
+
 if exists(select * from InstructorTeachCourse where @instrId=instId and @cid=cid)
 update StudentTakeAssignment 
-set grade=@grade 
-where stid=@sid and cid=@cid and assignmentNumber=@assignmentNumber and assignmentType=@type
----------------------------------------------
+set grade= CASE WHEN @fullGrade >=  @grade  AND @grade >= 0 THEN @grade ELSE grade END
+where stid=@sid and cid=@cid and assignmentNumber=@assignmentNumber and assignmentType=@type;
+
+drop proc InstructorgradeAssignmentOfAStudent
+--------------------------------------------- 
 go 
 create proc ViewFeedbacksAddedByStudentsOnMyCourse 
 @instrId int,
@@ -578,7 +596,7 @@ create proc calculateFinalGrade
 @sid int , 
 @insId int
 as 
-DECLARE @variable  decimal(4,2) 
+DECLARE @variable  decimal(10,2) 
 if exists(Select * from InstructorTeachCourse where instId=@insId and @cid=cid)
 BEGIN
  select @variable= Sum (Grade)
@@ -586,10 +604,10 @@ BEGIN
   from Assignment a INNER JOIN StudentTakeAssignment s on (a.Assign_type = s.assignmentType AND a.number = s.assignmentNumber AND 
   a.cid = s.cid ) where s.stid=@sid and a.cid=@cid ) AS Total
 END
-
  Update  StudentTakeCourse 
   Set grade=@variable
-  Where cid=@cid and stid=@sid and instId=@insId
+  Where cid=@cid and stid=@sid 
+
 ---------------------------------------------------------------------------------------------------
 
 go
@@ -597,17 +615,17 @@ go
 create proc InstructorIssueCertificateToStudent 
 @cid int , @sid int , @insId int, @issueDate datetime 
 As
-declare @variable decimal (4,2)
-if exists(Select * from StudentTakeCourse where cid=@cid and stid=@sid ) AND EXISTS ( SELECT * FROM InstructorTeachCourse where instId=@insId) 
+declare @variable decimal (10,2)
+if exists(Select * from StudentTakeCourse where cid=@cid and stid=@sid ) AND EXISTS ( SELECT * FROM InstructorTeachCourse where instId=@insId AND cid = @cid) 
 BEGIN 
 Select @variable=grade
-from StudentTakeCourse
+from StudentTakeCourse where stid = @sid AND cid = @cid
 If(@variable >=50)
     Insert into StudentCertifyCourse values (@sid,@cid,@issueDate)
     END
 
+    drop proc InstructorIssueCertificateToStudent
     
-
 --------------------------------- STUDENT -----------------------------
 
 
@@ -617,10 +635,10 @@ GO
 CREATE PROC viewMyProfile
 @id INT 
 AS
-SELECT * FROM Users u inner join Student s on u.id = s.id 
+SELECT * FROM Student s  inner join USERS u on u.id = s.id 
                where u.id = @id
 
-
+drop proc viewMyProfile
 -------------------------- 
 --b) Edit my profile (change any of my personal information). 
 
@@ -670,7 +688,7 @@ create Proc courseInformation
 as
 select C.*,U.firstName , U.lastName
 From InstructorTeachCourse ITC inner join Users U On ITC.instId =U.id inner join Course c on ITC.cid = c.id
-where instructorId=@id
+where c.id=@id
 
 --drop proc courseInformation
 
@@ -687,10 +705,13 @@ Insert into StudentTakeCourse(stid,cid,instId) values (@sid ,@cid,@instr)
 go
 create Proc addCreditCard 
 @sid int, @number varchar(15), @cardHolderName varchar(16), @expiryDate datetime, @cvv varchar(3) 
+
 as
-Insert into CreditCard values(@number,@cardHolderName,@expiryDate,@cvv)
 if exists ( select * from Student where id = @sid  )
+BEGIN
+Insert into CreditCard values(@number,@cardHolderName,@expiryDate,@cvv)
 Insert into StudentAddCreditCard values(@sid,@number)
+END
 
 --drop proc addCreditCard
 -----------------------------------------------------------------
@@ -709,12 +730,11 @@ create proc payCourse
 @sid int
 as 
 if exists(select * from StudentAddCreditCard where @sid=stid) and exists(select * from StudentTakeCourse where @cid=cid and @sid=stid) 
-        and exists(select * from StudentHasPromocode where @sid=student_id)
-
-UPDATE StudentTakeCourse    SET payedfor = 1 
+ BEGIN 
+ UPDATE StudentTakeCourse    SET payedfor = 1 
 where stid = @sid AND cid = @cid
-
-drop proc payCourse
+END 
+--drop proc payCourse
 -------------------------------------------------------------------------------------------------
 go 
 create proc enrollInCourseViewContent
@@ -722,14 +742,15 @@ create proc enrollInCourseViewContent
 @cid int
 as
 if exists(select * from StudentTakeCourse where @id=stid and @cid=cid)
-select id, creditHours, name, courseDescription, price, content from Course
+select c.id, c.creditHours, c.name, c.courseDescription, c.price, c.content from Course c INNER JOIN StudentTakeCourse st on c.id=st.cid where @id=stid and @cid=cid
+--drop proc enrollInCourseViewContent
 ------------------------------------------------------------------------
 go
 create proc viewAssign
 @courseId int, 
 @Sid int
 as
-if exists ( select * from StudentTakeAssignment where @Sid=stid and @courseId=cid)
+if exists ( select * from StudentTakeCourse where @Sid=stid and @courseId=cid)
 select * from Assignment
 --------------------------------------------------------------------------
 go
@@ -739,8 +760,10 @@ create proc submitAssign
 @sid INT, 
 @cid INT 
 as
-if exists(select * from StudentTakeAssignment where @sid=stid and @cid=cid)
+if exists(select * from StudentTakeCourse s inner join Assignment a on s.cid = a.cid where @sid=s.stid and @cid=s.cid and a.Assign_type = @assignType and a.number = @assignnumber )
 insert into StudentTakeAssignment (stid, cid, assignmentNumber, assignmentType) values (@sid, @cid, @assignnumber, @assignType)
+
+drop proc submitAssign
 -------------------------------------------------------------------------------------------------------------------
    go
 create proc viewAssignGrades
@@ -800,7 +823,7 @@ AS
 if exists ( SELECT * FROM StudentTakeCourse s where  s.stid = @sid  AND instId =@insid )
 INSERT INTO StudentRateInstructor VALUES ( @sid , @insid , @rate ) 
 
-drop proc rateInstructor
+--drop proc rateInstructor
 -------------------------------------------------------- 
 
 -- L )  List certificates (with all its information )issued to me for a course I had finished. 
@@ -808,7 +831,7 @@ GO
 CREATE PROC viewCertificate
 @cid int , @sid int 
 AS
-SELECT * FROM StudentCertifyCourse WHERE cid = @cid AND sid = @sid
+SELECT * FROM StudentCertifyCourse c WHERE c.cid = @cid AND c.s = @sid
 
 ----------------------------- 
 
@@ -817,11 +840,11 @@ SELECT * FROM StudentCertifyCourse WHERE cid = @cid AND sid = @sid
 
 -- Register Student 
 
-exec studentRegister 'ali','ahmed','mmm','ali@gmail.com',1,'aaa'
+exec studentRegister 's','2','mmm','ali@gmail.com',1,'aaa'
 
 select * from USERS
 
-exec InstructorRegister 'I','4','mmm','@gmail',1,'aaa'
+exec InstructorRegister 'I','2','mmm','@gmail',1,'aaa'
 
 DELETE FROM USERS where  id = 3 OR id = 4
 
@@ -853,7 +876,7 @@ EXEC AdminViewInstructorProfile 5
 
 --------------------------------   Instr add Course ----------------------- 
 
-EXEC InstAddCourse 4 ,  'Math 5' , 1000.50 , 6
+EXEC InstAddCourse 2 ,  'DSD' , 1000.50 , 2
 select * from InstructorTeachCourse
 
 --------------------------------  AdminViewAllCourses ----------------------- 
@@ -868,14 +891,14 @@ EXEC AdminViewCourseDetails 1
 
 -------------------------------- AdminAcceptRejectCourse ---------------------------
 INSERT INTO USERS DEFAULT VALUES 
-INSERT INTO Admins VALUES ( 8 )
+INSERT INTO Admins VALUES ( 5 )
 select * from Admins
-EXEC AdminAcceptRejectCourse 8 , 1
-
+EXEC AdminAcceptRejectCourse  5, 1
+select * from USERS
 
 -------------------------------- AdminCreatePromocode ---------------------------
 
-EXEC AdminCreatePromocode '123456' , '1-1-2000' , '1-1-2020' , 50.5 , 8
+EXEC AdminCreatePromocode '123456' , '1-1-2000' , '1-1-2020' , 50.5 , 5
 
 SELECT * FROM PromoCode
 
@@ -888,13 +911,13 @@ EXEC AdminViewStudentProfile 3
 
 -------------------------------- AdminIssuePromocodeToStudent ------------
 
-EXEC AdminIssuePromocodeToStudent 2 , '123456'
+EXEC AdminIssuePromocodeToStudent 1 , '123456'
 
 select * from InstructorTeachCourse
 
 
 -------------------------------- AddAnotherInstructorToCourse ----------------
-EXEC AddAnotherInstructorToCourse 6  , 1 , 5
+EXEC AddAnotherInstructorToCourse 2  , 4 , 4
 select * from addIn
 select * from InstructorTeachCourse
 -------------------------------- UpdateCourseContent ------------
@@ -918,14 +941,22 @@ select * from CoursePrerequisiteCourse
 
 ------------------------------- DefineAssignmentOfCourseOfCertianType -------------
 
-EXEC DefineAssignmentOfCourseOfCertianType 6 , 1 , 1 , 'Quiz' , 15 , 15 , '1-1-2021' , 'Why Nada?'
-EXEC DefineAssignmentOfCourseOfCertianType 5 , 2 , 1 , 'Quiz' , 15 , 15 , '1-1-2021' , 'Why Nada?'
+EXEC DefineAssignmentOfCourseOfCertianType 2 , 6 , 1 , 'Quiz' , 15 , 15 , '1-1-2021' , 'Why Nada?'
+EXEC DefineAssignmentOfCourseOfCertianType 4 , 1 , 1 , 'Project' , 15 , 15 , '1-1-2021' , 'Why Nada?'
+EXEC DefineAssignmentOfCourseOfCertianType 4 , 1 , 3 , 'Exam' , 15 , 15 , '1-1-2021' , 'Why Nada?'
+EXEC DefineAssignmentOfCourseOfCertianType 2 , 4 , 2 , 'Quiz' , 15 , 15 , '1-1-2021' , 'Why Nada?'
+EXEC DefineAssignmentOfCourseOfCertianType 2 , 4 , 3 , 'Quiz' , 15 , 15 , '1-1-2021' , 'Why Nada?'
 
-
+select * from Assignment
+select * from Instructor
 
 ------------------------------- Student.enrollInCourse -------------
 
-EXEC enrollInCourse 9 ,1,5
+EXEC enrollInCourse 1 ,3,4
+EXEC enrollInCourse 3 ,4,2
+EXEC enrollInCourse 1 ,4,4
+
+
 ------------------------------- Student.rateInstructor -------------
 select * from USERS
 
@@ -945,3 +976,102 @@ SELECT * FROM UserMobileNumber
 EXEC ViewInstructorProfile 6
 
 
+-------------------------------------Student----------------------------
+
+---------------------------------------viewMyProfile------------------
+exec viewMyProfile 1
+--------------editMyProfile----------------------------------
+exec editMyProfile 1,NULL,NULL,NULL,0,NULL,NULL
+exec editMyProfile 1,NULL,NULL,NULL,1,NULL,NULL
+
+------------availabeCourses-------------------------
+exec availableCourses
+
+EXEC InstAddCourse 6 ,  'cs' , 1000.50 , 4
+
+----------courseInformation-----------------
+exec courseInformation 2
+
+--------addCreditCard----------------
+exec addCreditCard 6,'1122334456','laila','11/12/2000','345'
+
+select * from StudentAddCreditCard
+
+select * from CreditCard
+
+----------------viewPromoCode------------------
+exec viewPromoCode 3
+
+-----------payCourse------------------
+
+exec payCourse 4,2
+
+select * from StudentTakeCourse
+-----------enrollInCourseViewContent--------------
+exec enrollInCourseViewContent 1,2
+exec enrollInCourseViewContent 3,2
+
+------------ viewAssignment ---------------------------
+select * from StudentTakeCourse
+
+EXEC viewAssign 1 , 1
+
+
+------------ sumbitAssignment ----------------
+
+EXEC submitAssign 'Project' , 1 , 1 , 1
+
+SELECT * FROM Assignment
+SELECT * FROM StudentTakeCourse
+
+------------ viewAssignmentGrade -----------------
+
+EXEC InstructorgradeAssignmentOfAStudent 2 ,1 , 1 , 1 , 'Project' , 5
+EXEC AddAnotherInstructorToCourse 2 , 1,4
+SELECT * FROM InstructorTeachCourse
+select * from StudentTakeAssignment
+
+DECLARE @var decimal(4,2)
+
+EXEC viewAssignGrades 1 , 'Project' , 1, 1 , @var OUTPUT
+
+PRINT @VAR
+
+-----------  viewFinalGrade ---
+EXEC submitAssign 'Quiz' , 2 , 1 , 1
+EXEC submitAssign 'Exam' , 3 , 1 , 1
+
+EXEC InstructorgradeAssignmentOfAStudent 4 ,1 , 1 , 3 , 'Exam' , 10
+
+update StudentTakeAssignment 
+set grade = 8 where assignmentNumber = 3
+
+ exec calculateFinalGrade 1 ,1 ,2
+ DECLARE @var decimal(10,2)
+
+ EXEC viewFinalGrade 1 , 1 , @var OUTPUT
+
+ PRINT @var
+ ----------   addFeedback ------------
+
+ EXEC addFeedback 'Nada .. bs kda' ,4,1
+ exec addFeedback 'Nada -- 2' , 2,1
+ SELECT * FROM Feedback
+
+
+ --------- 
+
+ exec InstructorIssueCertificateToStudent 1,1,4,'12/24/2020'
+ exec InstructorIssueCertificateToStudent 2,1,4,'12/24/2020'
+ select * from StudentTakeCourse
+ UPDATE StudentTakeCourse 
+ SET grade = 200 where stid = 1 AND cid =2 
+SELECT * FROM StudentCertifyCourse
+
+EXEC viewCertificate 2 ,1 
+
+
+EXEC InstructorViewAssignmentsStudents 2,1
+
+
+EXEC ViewFeedbacksAddedByStudentsOnMyCourse 4 ,1
