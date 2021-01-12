@@ -11,8 +11,9 @@
             top: 49px;
             left: 246px;
             z-index: 1;
-            bottom: 208px;
+            bottom: 206px;
             right: 843px;
+            height: 29px;
         }
         .auto-style2 {
             position: absolute;
@@ -21,15 +22,24 @@
             z-index: 1;
             width: 168px;
         }
+        .auto-style3 {
+            position: absolute;
+            top: 48px;
+            left: 393px;
+            z-index: 1;
+        }
     </style>
 </head>
 <body>
     <form id="form1" runat="server">
         <div>
-            please add your mobile number(s):<br />
+            please add your mobile number :<br />
 &nbsp;<asp:TextBox ID="mobile" runat="server" CssClass="auto-style2" TextMode="Phone"></asp:TextBox>
         </div>
-        <asp:Button ID="add" runat="server" CssClass="auto-style1"  onClick="onSave" Text="Save" Height="20px" />
+        <asp:Button ID="add" runat="server" CssClass="auto-style1"  onClick="onSave" Text="Save" />
+        <asp:Button ID="more" runat="server" CssClass="auto-style3" OnClick="addMoreMob" Text="Add more" />
+        <p>
+            &nbsp;</p>
     </form>
 </body>
 </html>
