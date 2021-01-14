@@ -1,0 +1,132 @@
+
+1.addFeedback:-
+
+CREATE PROC addFeedback
+@comment VARCHAR(100),
+@cid INT,
+@sid INT,
+@false varchar(50) output
+AS
+BEGIN 
+IF(dbo.checkStudentEnrolledInCourse(@sid,@cid)='1')
+INSERT INTO Feedback (cid,comment,sid) VALUES (@cid,@comment,@sid)
+ELSE
+begin
+set @false = 'student not enrolled in course'
+end
+END
+
+-----------------------------------------------------------------
+
+2.enrollInCourse:-
+
+CREATE PROC enrollInCourse
+@sid INT,
+@cid INT,
+@instr int,
+@flag varchar(5) output
+AS
+begin
+DECLARE @var bit
+if  (exists(select* from InstructorTeachCourse i where i.cid =@cid and i.insid =@instr) 
+AND exists ( select * from Student where id = @sid  ))
+BEGIN
+set @flag = 'false'
+select @var=accepted from Course where id=@cid
+if(@var=1) and not exists(select * from StudentTakeCourse where sid=@sid and cid=@cid) 
+begin
+Insert into StudentTakeCourse(sid,cid,insid) values (@sid ,@cid,@instr)
+end
+END
+ELSE
+begin 
+set @flag = 'true'
+
+end
+
+end
+
+----------------------------------------------------------------------------------
+
+3.viewAssign:-
+
+
+CREATE PROC viewAssign
+@courseId int,
+@Sid VARCHAR(10),
+@result varchar(20) output
+AS
+BEGIN
+IF (EXISTS(SELECT * FROM Users WHERE id=@Sid))
+BEGIN
+SELECT A.* FROM Assignment A INNER JOIN Course C 
+ON A.cid = C.id WHERE C.id = @courseId
+END
+ELSE
+BEGIN
+set @result = 'not a user'
+END
+END
+
+-----------------------------------------------------------------------------------
+
+4.viewAssignGrades:-
+
+--View the grades of each assignment type.
+CREATE PROC viewAssignGrades
+@assignnumber int,
+@assignType VARCHAR(10),
+@cid INT,
+@sid INT,
+@assignGrade INT OUTPUT,
+@error varchar(50) output
+AS
+if exists(select * from StudentTakeAssignment STA where @sid=sid and @cid=cid and @assignnumber=assignmentNumber and @assignType=assignmenttype)
+select @assignGrade=grade from StudentTakeAssignment where @sid=sid and @cid=cid and @assignnumber=assignmentNumber and @assignType=assignmenttype
+ELSE
+begin 
+set @error = 'user does not take course'
+end
+
+-----------------------------------------------------------------------------------
+
+5.submitAssign:-
+
+
+CREATE PROC submitAssign
+@assignType VARCHAR(10),
+@assignnumber int,
+@sid INT,
+@cid INT,
+@error varchar(50) output
+AS
+BEGIN
+IF (EXISTS(SELECT * FROM StudentTakeCourse WHERE cid = @cid AND sid = @sid ))
+Begin
+INSERT INTO StudentTakeAssignment values (@sid,@cid,@assignnumber,@assignType,null)
+end
+ELSE
+begin
+set @error = 'not enrolled in course'
+end
+END
+
+----------------------------------------------------------------------------------
+
+6.viewCertificate:-
+
+CREATE PROC viewCertificate
+@cid INT,
+@sid INT,
+@result varchar(60) output
+AS
+BEGIN
+IF (dbo.checkStudentEnrolledInCourse(@sid,@cid)='1' AND EXISTS(SELECT A.fullGrade FROM Assignment A 
+INNER JOIN Course C ON A.cid = C.id WHERE C.id= @cid ) )
+SELECT * FROM StudentCertifyCourse WHERE sid = @sid AND cid = @cid
+ELSE
+begin
+set @result = 'student not enrolled in course or did not finish course'
+end
+END
+
