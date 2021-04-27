@@ -240,7 +240,7 @@ public class DBApp implements DBAppInterface {
 
 		Vector<Hashtable<String, Object>> newPage = new Vector();
 		if (OldpageSize == maxPageCount) {
-			int j  = (OldpageSize+1) / 2;
+			int j  = (OldpageSize+1) / 2; // j represents the actual index that we are removing , while i represents the number of iterations 
 			for (int i = 0; i < OldpageSize/2 +1; i++)
 				newPage.add(page.remove(j));
 			
@@ -270,9 +270,9 @@ public class DBApp implements DBAppInterface {
 
 			table.pages.add(table.pages.indexOf(virtPage) + 1, newVirtPage);
 
-//			serialize(table, globalPath + "\\Tables" + tableName + "\\" + "Table" + ".class");
-//			serialize(page, globalPath + "\\Tables" + tableName + "\\" + virtPageId + ".class");
-//			serialize(newPage, globalPath + "\\Tables" + tableName + "\\" + table.maxPageId + ".class");
+			serialize(table, globalPath + "\\Tables" + tableName + "\\" + "Table" + ".class");
+			serialize(page, globalPath + "\\Tables" + tableName + "\\" + virtPageId + ".class");
+			serialize(newPage, globalPath + "\\Tables" + tableName + "\\" + table.maxPageId + ".class");
 
 		}
 
@@ -283,8 +283,8 @@ public class DBApp implements DBAppInterface {
 			virtPage.min = ((Hashtable) page.get(0)).get(pk);
 			virtPage.max = ((Hashtable) page.get(page.size() - 1)).get(pk);
 
-//			serialize(table, globalPath + "\\Tables" + tableName + "\\" + "Table" + ".class");
-//			serialize(page, globalPath + "\\Tables" + tableName + "\\" + virtPageId + ".class");
+			serialize(table, globalPath + "\\Tables" + tableName + "\\" + "Table" + ".class");
+			serialize(page, globalPath + "\\Tables" + tableName + "\\" + virtPageId + ".class");
 
 		}
 		// update virtual old page and new if it exists
