@@ -1,6 +1,8 @@
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -15,6 +17,7 @@ import com.sun.jdi.ReferenceType;
 public class DBApp implements DBAppInterface {
 	String globalPath;
 	private int maxPageCount;
+	String localPath = "\\src\\main\\resources\\data\\";
 
 	public DBApp() {
 		init();
@@ -56,13 +59,13 @@ public class DBApp implements DBAppInterface {
 		Set max = colNameMax.keySet();
 
 		if (!cols.containsAll(min) || !cols.containsAll(max))
-			throw new DBAppException(" Missing/Invalid column metadata from one of the hashtables ");
+			throw new DBAppException(" Missing/Invalid column metadata from one of the hashdata ");
 
 		if (!min.containsAll(cols) || !min.containsAll(max))
-			throw new DBAppException(" Missing/Invalid column metadata from one of the hashtables ");
+			throw new DBAppException(" Missing/Invalid column metadata from one of the hashdata ");
 
 		if (!max.containsAll(cols) || !max.containsAll(min))
-			throw new DBAppException("Missing/Invalid column metadata from one of the hashtables ");
+			throw new DBAppException("Missing/Invalid column metadata from one of the hashdata ");
 
 		if (!cols.contains(clusteringKey))
 			throw new DBAppException("Clustering Key not included in Columns");
@@ -104,14 +107,14 @@ public class DBApp implements DBAppInterface {
 		writeCSV("/src/main/resources/tableNames.csv", tableNameRow);
 
 		String s = System.getProperty("user.dir");
-		s += "//Tables//";
+		s += localPath;
 		s += tableName;
 		File test = new File(s);
 		test.mkdir();
 
 		Table newTable = new Table();
 		newTable.pk = clusteringKey;
-		String tablePath = "./Tables/";
+		String tablePath = "./src/main/resources/data/";
 		tablePath += tableName + "/Table.class";
 		try {
 			FileOutputStream fileOut = new FileOutputStream(tablePath);
@@ -161,7 +164,7 @@ public class DBApp implements DBAppInterface {
 	public void insertIntoTable(String tableName, Hashtable<String, Object> colNameValue) throws DBAppException {
 		// TODO Auto-generated method stub
 
-		String tablePath = globalPath + "\\Tables\\" + tableName + "\\Table.class";
+		String tablePath = globalPath + "\\src\\main\\resources\\data\\" + tableName + "\\Table.class";
 
 		ArrayList<String[]> tableNames = readCSV(globalPath + "\\src\\main\\resources\\tableNames.csv");
 
@@ -199,20 +202,23 @@ public class DBApp implements DBAppInterface {
 
 			}
 
+			System.out.println(" PAGE ID " + pageId);
 			Page virtPage = null;
 			for (Page p : table.pages) {
 				if (p.id.equals(pageId))
 					virtPage = p;
 			}
 
-			Vector page = ((Vector) deSerialize(globalPath + "\\Tables" + tableName + "\\" + pageId + ".class"));
+			System.out.println(table);
+			Vector page = ((Vector) deSerialize(globalPath + localPath + tableName + "\\" + pageId + ".class"));
 
+			insertTuple(page, colNameValue, table.pk, virtPage, table, tableName, virtPage.id);
 		}
 
 	}
 
-	void insertTuple(Vector<Hashtable<String, Object>> page, Hashtable<String, Object> colNameValue, String pk, Page virtPage, Table table,
-			String tableName, String virtPageId) throws DBAppException {
+	void insertTuple(Vector<Hashtable<String, Object>> page, Hashtable<String, Object> colNameValue, String pk,
+			Page virtPage, Table table, String tableName, String virtPageId) throws DBAppException {
 
 		// LinkedList tempPage = new LinkedList();
 		int OldpageSize = page.size();
@@ -232,25 +238,24 @@ public class DBApp implements DBAppInterface {
 			}
 		}
 		page.add(insertInHere, colNameValue);
-		
-		for(Hashtable<String,Object> h : page)
-			System.out.print( h.get(pk) +" "); 
-		
+
+		for (Hashtable<String, Object> h : page)
+			System.out.print(h.get(pk) + " ");
+
 		System.out.println();
 
 		Vector<Hashtable<String, Object>> newPage = new Vector();
 		if (OldpageSize == maxPageCount) {
-			int j  = (OldpageSize+1) / 2; // j represents the actual index that we are removing , while i represents the number of iterations 
-			for (int i = 0; i < OldpageSize/2 +1; i++)
+			int j = (OldpageSize + 1) / 2;
+			for (int i = 0; i < OldpageSize / 2 + 1; i++)
 				newPage.add(page.remove(j));
-			
-			
-			for(Hashtable<String,Object> h : page)
-				System.out.print( h.get(pk) +" ");
+
+			for (Hashtable<String, Object> h : page)
+				System.out.print(h.get(pk) + " ");
 			System.out.println();
 
-			for(Hashtable<String,Object> h : newPage)
-				System.out.print( h.get(pk) +" ");
+			for (Hashtable<String, Object> h : newPage)
+				System.out.print(h.get(pk) + " ");
 			System.out.println();
 
 			// page : old page
@@ -270,9 +275,10 @@ public class DBApp implements DBAppInterface {
 
 			table.pages.add(table.pages.indexOf(virtPage) + 1, newVirtPage);
 
-			serialize(table, globalPath + "\\Tables" + tableName + "\\" + "Table" + ".class");
-			serialize(page, globalPath + "\\Tables" + tableName + "\\" + virtPageId + ".class");
-			serialize(newPage, globalPath + "\\Tables" + tableName + "\\" + table.maxPageId + ".class");
+			serialize(table, globalPath + "\\src\\main\\resources\\data\\" + tableName + "\\" + "Table" + ".class");
+			serialize(page, globalPath + "\\src\\main\\resources\\data\\" + tableName + "\\" + virtPageId + ".class");
+			serialize(newPage,
+					globalPath + "\\src\\main\\resources\\data\\" + tableName + "\\" + table.maxPageId + ".class");
 
 		}
 
@@ -283,8 +289,8 @@ public class DBApp implements DBAppInterface {
 			virtPage.min = ((Hashtable) page.get(0)).get(pk);
 			virtPage.max = ((Hashtable) page.get(page.size() - 1)).get(pk);
 
-			serialize(table, globalPath + "\\Tables" + tableName + "\\" + "Table" + ".class");
-			serialize(page, globalPath + "\\Tables" + tableName + "\\" + virtPageId + ".class");
+			serialize(table, globalPath + localPath + tableName + "\\" + "Table" + ".class");
+			serialize(page, globalPath + localPath + tableName + "\\" + virtPageId + ".class");
 
 		}
 		// update virtual old page and new if it exists
@@ -423,7 +429,7 @@ public class DBApp implements DBAppInterface {
 		case "double":
 			return Double.parseDouble(insrtObjt);
 		case "date":
-			return LocalDate.parse(insrtObjt);
+			return Date.parse(insrtObjt);
 		default:
 			return false;
 
@@ -432,6 +438,8 @@ public class DBApp implements DBAppInterface {
 	}
 
 	public static boolean MinMaxChecker(String[] filteredArray, Object o) {
+		SimpleDateFormat formatter1 = new SimpleDateFormat("YYYY-MM-DD");
+
 		switch (filteredArray[2].substring(10).toLowerCase()) {
 		case "integer":
 			// System.out.println("int");
@@ -446,8 +454,13 @@ public class DBApp implements DBAppInterface {
 					&& Double.parseDouble(filteredArray[6]) >= (double) o;
 		case "date":
 			// System.out.println("date");
-			return LocalDate.parse(filteredArray[5]).compareTo((LocalDate) o) <= 0
-					&& LocalDate.parse(filteredArray[6]).compareTo((LocalDate) o) >= 0;
+			try {
+				return formatter1.parse(filteredArray[5]).compareTo((Date) o) <= 0
+						&& formatter1.parse(filteredArray[6]).compareTo((Date) o) >= 0;
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		default:
 			return false;
 		}
@@ -462,8 +475,11 @@ public class DBApp implements DBAppInterface {
 		table.noPages = false;
 		table.pages.add(newPage);
 		table.maxPageId = "1";
-		serialize(serPage, globalPath + "\\Tables\\" + tableName + "\\1.class");
-		serialize(table, globalPath + "\\Tables\\" + tableName + "\\Table.class");
+
+		System.out.println(table);
+
+		serialize(serPage, globalPath + localPath + tableName + "\\1.class");
+		serialize(table, globalPath + localPath + tableName + "\\Table.class");
 
 	}
 
@@ -575,7 +591,7 @@ public class DBApp implements DBAppInterface {
 		Set colNames = columnNameValue.keySet();
 		inputChecker(colNames, filteredArray, columnNameValue);
 
-		String tablePath = globalPath + "\\Tables\\" + tableName + "\\Table.class";
+		String tablePath = globalPath + localPath + tableName + "\\Table.class";
 
 		Table table = (Table) deSerialize(tablePath);
 
@@ -596,7 +612,7 @@ public class DBApp implements DBAppInterface {
 		///////////////////////////////////////////// Add throw excpetion to method
 		///////////////////////////////////////////// ////////////////
 
-		Vector page = ((Vector) deSerialize(globalPath + "\\Tables" + tableName + "\\" + pageId + ".class"));
+		Vector page = ((Vector) deSerialize(globalPath + localPath + tableName + "\\" + pageId + ".class"));
 
 		int tupleIndex = binSearch(table.pk, primValue, page);
 
@@ -608,8 +624,8 @@ public class DBApp implements DBAppInterface {
 			tuple.put((String) key, columnNameValue.get(key));
 		}
 
-		serialize(page, globalPath + "\\Tables" + tableName + "\\" + pageId + ".class");
-		serialize(table, globalPath + "\\Tables" + tableName + "\\" + "Table" + ".class");
+		serialize(page, globalPath + localPath + tableName + "\\" + pageId + ".class");
+		serialize(table, globalPath + localPath + tableName + "\\" + "Table" + ".class");
 	}
 
 	@Override
@@ -635,7 +651,7 @@ public class DBApp implements DBAppInterface {
 		Set colNames = columnNameValue.keySet();
 		inputChecker(colNames, filteredArray, columnNameValue);
 
-		String tablePath = globalPath + "\\Tables\\" + tableName + "\\Table.class";
+		String tablePath = globalPath + localPath + tableName + "\\Table.class";
 
 		Table table = (Table) deSerialize(tablePath);
 
@@ -648,7 +664,7 @@ public class DBApp implements DBAppInterface {
 		else {
 
 			String pageId = insert(primKey, table.pages);
-			Vector page = ((Vector) deSerialize(globalPath + "\\Tables" + tableName + "\\" + pageId + ".class"));
+			Vector page = ((Vector) deSerialize(globalPath + localPath + tableName + "\\" + pageId + ".class"));
 			int index = binSearch(pk, primKey, page); // badal success khaletha index 3shan binSearch btraga3 el index
 			if (index == -1) // i didn't find the element badal success khaletha index bardo ghayart el esm
 								// bas
@@ -673,7 +689,7 @@ public class DBApp implements DBAppInterface {
 			}
 
 			if (page.isEmpty()) {
-				File f = new File(globalPath + "\\Tables" + tableName + "\\" + pageId + ".class");
+				File f = new File(globalPath + localPath + tableName + "\\" + pageId + ".class");
 				f.delete();
 
 				table.pages.remove(p);
@@ -685,8 +701,8 @@ public class DBApp implements DBAppInterface {
 			else {
 				p.min = ((Hashtable<String, Object>) (page.get(0))).get(pk);
 				p.max = ((Hashtable<String, Object>) (page.get(page.size() - 1))).get(pk);
-				serialize(page, globalPath + "\\Tables" + tableName + "\\" + pageId + ".class");
-				serialize(table, globalPath + "\\Tables" + tableName + "\\" + "Table" + ".class");
+				serialize(page, globalPath + localPath + tableName + "\\" + pageId + ".class");
+				serialize(table, globalPath + localPath + tableName + "\\" + "Table" + ".class");
 
 			}
 
@@ -701,7 +717,7 @@ public class DBApp implements DBAppInterface {
 		for (Page p : pages) {
 			String id = p.id;
 			Vector<Hashtable<String, Object>> page = ((Vector) deSerialize(
-					globalPath + "\\Tables" + tableName + "\\" + id + ".class"));
+					globalPath + localPath + tableName + "\\" + id + ".class"));
 			for (Hashtable<String, Object> row : page) {
 				Set<String> cols = columnNameValue.keySet();
 				boolean flag = true;
@@ -716,21 +732,21 @@ public class DBApp implements DBAppInterface {
 
 			}
 			if (page.isEmpty()) {
-				File f = new File(globalPath + "\\Tables" + tableName + "\\" + id + ".class");
+				File f = new File(globalPath + localPath + tableName + "\\" + id + ".class");
 				f.delete();
 
 				t.pages.remove(p);
 
 				if (t.pages.isEmpty())
 					t.noPages = true;
-				serialize(t, globalPath + "\\Tables" + tableName + "\\" + "Table" + ".class");
+				serialize(t, globalPath + localPath + tableName + "\\" + "Table" + ".class");
 
 			} else {
 
 				p.min = ((Hashtable<String, Object>) (page.get(0))).get(t.pk);
 				p.max = ((Hashtable<String, Object>) (page.get(page.size() - 1))).get(t.pk);
-				serialize(page, globalPath + "\\Tables" + tableName + "\\" + id + ".class");
-				serialize(t, globalPath + "\\Tables" + tableName + "\\" + "Table" + ".class");
+				serialize(page, globalPath + localPath + tableName + "\\" + id + ".class");
+				serialize(t, globalPath + localPath + tableName + "\\" + "Table" + ".class");
 
 			}
 
@@ -748,7 +764,14 @@ public class DBApp implements DBAppInterface {
 	public static void main(String[] args) {
 		DBApp a = new DBApp();
 
-//		Date testDate = new Date();
+		// Date testDate = new Date();
+
+		List x = new ArrayList<Object>();
+		x.add("3");
+		x.add(3);
+
+//         String [] s = { "aa" };
+//         System.out.println ( Arrays.toString(s) ) ;
 //		try {
 //			Thread.sleep(1000);
 //		} catch (InterruptedException e) {
@@ -760,6 +783,10 @@ public class DBApp implements DBAppInterface {
 //			
 //			// negative -> testDate older than testdate 2
 //		}
+
+//		ArrayList<String> p = new ArrayList<String>();
+//		
+//		System.out.println(Boolean.parseBoolean("FAlse"));
 //		
 //		Double x = (double) 3;
 //		System.out.println( x );
@@ -774,7 +801,7 @@ public class DBApp implements DBAppInterface {
 //			System.out.println();
 //		}
 		// ArrayList<String[]> s = readCSV("src/main/resources/metadata.csv");
-		String strTableName = "Student26";
+		String strTableName = "Student31";
 		String cluster = "id";
 
 		Hashtable htblColNameType = new Hashtable();
@@ -793,7 +820,7 @@ public class DBApp implements DBAppInterface {
 		htblColNameMax.put("gpa", "4.0");
 
 		Hashtable htblColNameValue = new Hashtable();
-		htblColNameValue.put("id", 50);
+		htblColNameValue.put("id", 140);
 		htblColNameValue.put("name", "zzzz");
 		htblColNameValue.put("gpa", 0.95);
 
@@ -810,60 +837,70 @@ public class DBApp implements DBAppInterface {
 		// System.out.println(prop.getProperty("app.version"));
 		// System.out.println(a.outOfRangeRoutine(htblColNameValue, table));
 
-//		try {
-////			 a.createTable(strTableName, cluster, htblColNameType, htblColNameMin,
-////			 htblColNameMax);
-//			a.insertIntoTable(strTableName, htblColNameValue);
-//		} catch (DBAppException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		
-
-//		
-//		Table t = (Table) a.deSerialize(
-//				"C:\\Users\\Mohamed Amr\\Desktop\\Desktop\\GUC\\Semester 6\\DB II\\Project\\GUC_437_53_5863_2021-04-11T23_56_39\\DB2Project\\Tables\\Student26\\Table.class");
-
-		// System.out.println(t.toString());
-
-		Vector<Hashtable<String, Object>> page = new Vector<Hashtable<String,Object>>();
-		
-		Hashtable h1 = new Hashtable();
-		h1.put("id", 50);
-		
-		page.add(h1);
-		
-		Hashtable h2 = new Hashtable();
-		h2.put("id", 100);
-		
-		page.add(h2);
-		
-		
-		Hashtable h3 = new Hashtable();
-		h3.put("id", 120);
-		
-		Page p = new Page(50,100,"1" );
-		p.isFull = true;
-		Table table = new Table();
-		table.noPages = false;
-		table.maxPageId = "1";
-		table.pk = "id";
-		table.pages.add(p);
-		
-		System.out.println(table);
-		
 		try {
-			a.insertTuple(page, h3, "id" , p, table, "tablename", "1");
-			System.out.println(table.toString());
-			for( Hashtable<String,Object> h : page ) {
-				for( String s: h.keySet() )
-					System.out.print( h.get(s)  + " ");
-				System.out.println();
-			}
+//			 a.createTable(strTableName, cluster, htblColNameType, htblColNameMin,
+//			 htblColNameMax);
+			a.insertIntoTable(strTableName, htblColNameValue);
 		} catch (DBAppException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
+		finally {
+			Vector<Hashtable<String, Object>> b = (Vector) a.deSerialize(
+					"C:\\Users\\Mohamed Amr\\Desktop\\Desktop\\GUC\\Semester 6\\DB II\\Project\\GUC_437_53_5863_2021-04-11T23_56_39\\DB2Project\\src\\main\\resources\\data\\Student31\\1.class");
+			for (Hashtable<String, Object> t : b) {
+
+				System.out.print(t.get("id") + " ");
+
+			}
+		}
+//		
+
+//		
+//		Table t = (Table) a.deSerialize(
+//				"C:\\Users\\Mohamed Amr\\Desktop\\Desktop\\GUC\\Semester 6\\DB II\\Project\\GUC_437_53_5863_2021-04-11T23_56_39\\DB2Project\\data\\Student26\\Table.class");
+
+		// System.out.println(t.toString());
+
+		Vector<Hashtable<String, Object>> page = new Vector<Hashtable<String, Object>>();
+
+		Hashtable h1 = new Hashtable();
+		h1.put("id", 50);
+
+		page.add(h1);
+
+		Hashtable h2 = new Hashtable();
+		h2.put("id", 100);
+
+		page.add(h2);
+
+		Hashtable h3 = new Hashtable();
+		h3.put("id", 120);
+
+//		//Page p = new Page(50,100,"1" );
+//		p.isFull = true;
+//		Table table = new Table();
+//		table.noPages = false;
+//		table.maxPageId = "1";
+//		table.pk = "id";
+//		table.pages.add(p);
+
+//		System.out.println(table);
+//		
+//		try {
+//			a.insertTuple(page, h3, "id" , p, table, "tablename", "1");
+//			System.out.println(table.toString());
+//			for( Hashtable<String,Object> h : page ) {
+//				for( String s: h.keySet() )
+//					System.out.print( h.get(s)  + " ");
+//				System.out.println();
+//			}
+//		} catch (DBAppException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+
 	}
 
 	public int binSearch(String pk, Object primaryKey, Vector<Hashtable<String, Object>> v) {
