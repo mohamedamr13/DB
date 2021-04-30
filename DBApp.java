@@ -358,14 +358,27 @@ public class DBApp implements DBAppInterface {
 	void inputChecker(Set colNames, ArrayList<String[]> filteredArray, Hashtable<String, Object> colNameValue)
 			throws DBAppException {
 		boolean flag = false;
+
+		ArrayList<String> s1 = new ArrayList<String>();
+		for (String[] s2 : filteredArray) {
+			s1.add(s2[1]);
+		}
+
+		List x = (List) colNames.stream().filter(a -> !s1.contains(a)).collect(Collectors.toList());
+
+		if (!x.isEmpty())
+			throw new DBAppException("A column does not exist");
+
 		for (Object s : colNames) {
 			int i = 0;
+
 			while (i < filteredArray.size()) {
 				if (s.equals((filteredArray.get(i)[1]))) {
 
 					if (parseType(colNameValue.get(s), filteredArray.get(i)[2])) {
 
 						if (MinMaxChecker(filteredArray.get(i), colNameValue.get(s))) {
+							System.out.println(s);
 							flag = true;
 							break;
 
@@ -382,7 +395,7 @@ public class DBApp implements DBAppInterface {
 				i++;
 
 			}
-			if (flag == false) {
+			if (!flag) {
 				throw new DBAppException("A column doesn't exist");
 			}
 
@@ -420,7 +433,12 @@ public class DBApp implements DBAppInterface {
 		case "double":
 			return Double.parseDouble(insrtObjt);
 		case "date":
-			return Date.parse(insrtObjt);
+			int year = Integer.parseInt(insrtObjt.trim().substring(0, 4));
+			int month = Integer.parseInt(insrtObjt.trim().substring(5, 7));
+			int day = Integer.parseInt(insrtObjt.trim().substring(8));
+
+			return new Date(year - 1900, month - 1, day);
+
 		default:
 			return false;
 
@@ -911,33 +929,43 @@ public class DBApp implements DBAppInterface {
 //         }
 
 //
-          int i = 0;
-		for (String[] s1 : s) {
-			try {
-				Hashtable h1 = new Hashtable();
-				h1.put("id", s1[0]);
+		// int i = 0;
+		// for (String[] s1 : s) {
+		try {
+//				Hashtable h1 = new Hashtable();
+//				h1.put("id", s1[0]);
+//
+//	            int year = Integer.parseInt(s1[3].trim().substring(0, 4));
+//	            int month = Integer.parseInt(s1[3].trim().substring(5, 7));
+//	            int day = Integer.parseInt(s1[3].trim().substring(8));
+//	          
+//	            Date dob = new Date(year - 1900, month - 1, day);
+//				h1.put("dob", dob);
+//				h1.put("gpa", Double.parseDouble(s1[4]));
+//				h1.put("first_name", s1[1]);
+//				h1.put("last_name", s1[2]);
+//				
+//				System.out.println(i++);
+//
+//				System.out.println(s1[3]);
+//				System.out.println("-----------------------");
 
-	            int year = Integer.parseInt(s1[3].trim().substring(0, 4));
-	            int month = Integer.parseInt(s1[3].trim().substring(5, 7));
-	            int day = Integer.parseInt(s1[3].trim().substring(8));
-	          
-	            Date dob = new Date(year - 1900, month - 1, day);
-				h1.put("dob", dob);
-				h1.put("gpa", Double.parseDouble(s1[4]));
-				h1.put("first_name", s1[1]);
-				h1.put("last_name", s1[2]);
-				
-				System.out.println(i++);
+			String table = "students";
+			Hashtable<String, Object> row = new Hashtable();
+			row.put("first_name", "foo");
+			row.put("middle_name", "hamada");
+			row.put("last_name", "bar");
 
-				System.out.println(s1[3]);
-				System.out.println("-----------------------");
+			Date dob = new Date(1992 - 1900, 9 - 1, 8);
+			row.put("dob", dob);
+			row.put("gpa", 1.1);
 
-				a.inputChecker(h1.keySet(), filteredArray, h1);
-			} catch (DBAppException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			a.inputChecker(row.keySet(), filteredArray, row);
+		} catch (DBAppException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+		// }
 
 //		Date dob = new Date(2000 - 1900, 5 - 1, 5);
 //		String[] c = filteredArray.get(3);
