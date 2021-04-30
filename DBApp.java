@@ -198,19 +198,21 @@ public class DBApp implements DBAppInterface {
 			String pageID = insert(colNameValue.get(table.pk), table.pages);
 			if (pageID.equals("-1")) {
 
-				pageId = outOfRangeRoutine(colNameValue, table);
+				pageID = outOfRangeRoutine(colNameValue, table);
 
 			}
 
-			System.out.println(" PAGE ID " + pageId);
+			System.out.println(" PAGE ID " + pageID);
 			Page virtPage = null;
 			for (Page p : table.pages) {
-				if (p.id.equals(pageId))
+				if (p.id.equals(pageID))
 					virtPage = p;
 			}
 
+			System.out.println(virtPage.id);
+
 			System.out.println(table);
-			Vector page = ((Vector) deSerialize(globalPath + localPath + tableName + "\\" + pageId + ".class"));
+			Vector page = ((Vector) deSerialize(globalPath + localPath + tableName + "\\" + pageID + ".class"));
 
 			insertTuple(page, colNameValue, table.pk, virtPage, table, tableName, virtPage.id);
 		}
@@ -226,7 +228,7 @@ public class DBApp implements DBAppInterface {
 		for (int i = OldpageSize - 1; i >= 0; i--) {
 
 			Hashtable<String, Object> tuple = (Hashtable<String, Object>) page.get(i);
-			System.out.println(colNameValue.get("id"));
+			// System.out.println(colNameValue.get("id"));
 			if (compare(tuple.get(pk), colNameValue.get(pk)) == 0)
 				throw new DBAppException("Tuple arleady exists in Table");
 			else if (compare(tuple.get(pk), colNameValue.get(pk)) < 0) {
@@ -239,24 +241,16 @@ public class DBApp implements DBAppInterface {
 		}
 		page.add(insertInHere, colNameValue);
 
-		for (Hashtable<String, Object> h : page)
-			System.out.print(h.get(pk) + " ");
-
-		System.out.println();
+//		for (Hashtable<String, Object> h : page)
+//			System.out.print(h.get(pk) + " ");
+//
+//		System.out.println();
 
 		Vector<Hashtable<String, Object>> newPage = new Vector();
 		if (OldpageSize == maxPageCount) {
 			int j = (OldpageSize + 1) / 2;
 			for (int i = 0; i < OldpageSize / 2 + 1; i++)
 				newPage.add(page.remove(j));
-
-			for (Hashtable<String, Object> h : page)
-				System.out.print(h.get(pk) + " ");
-			System.out.println();
-
-			for (Hashtable<String, Object> h : newPage)
-				System.out.print(h.get(pk) + " ");
-			System.out.println();
 
 			// page : old page
 			// new page: new page
@@ -366,7 +360,6 @@ public class DBApp implements DBAppInterface {
 			throws DBAppException {
 		boolean flag = false;
 		for (Object s : colNames) {
-			System.out.println(s);
 			int i = 0;
 			while (i < filteredArray.size()) {
 				if (s.equals((filteredArray.get(i)[1]))) {
@@ -378,9 +371,12 @@ public class DBApp implements DBAppInterface {
 							break;
 
 						} else {
+							System.out.println(s);
 							throw new DBAppException(" Illegal Argument;An input value is out of range ");
 						}
 					} else {
+						System.out.println(s);
+
 						throw new DBAppException("Illegal Arguemt;In correct Data type in one of the input values");
 					}
 				}
@@ -398,8 +394,6 @@ public class DBApp implements DBAppInterface {
 	static boolean parseType(Object insrtObjt, String metadataType) {
 		String type = metadataType.substring(10).toLowerCase();
 
-		System.out.println(insrtObjt.getClass());
-		System.out.println(type);
 		switch (type) {
 		case "integer":
 			return insrtObjt instanceof Integer;
@@ -419,8 +413,6 @@ public class DBApp implements DBAppInterface {
 	static Object returnType(String insrtObjt, String metadataType) {
 		String type = metadataType.substring(10).toLowerCase();
 
-		System.out.println(insrtObjt.getClass());
-		System.out.println(type);
 		switch (type) {
 		case "integer":
 			return Integer.parseInt(insrtObjt);
@@ -468,7 +460,6 @@ public class DBApp implements DBAppInterface {
 	}
 
 	void firstPageRoutine(Hashtable<String, Object> colNameValue, Table table, String tableName) {
-		System.out.println("here");
 		Vector serPage = new Vector(); // new Page
 		serPage.add(colNameValue);
 		Page newPage = new Page(colNameValue.get(table.pk), colNameValue.get(table.pk), "1");
@@ -801,7 +792,7 @@ public class DBApp implements DBAppInterface {
 //			System.out.println();
 //		}
 		// ArrayList<String[]> s = readCSV("src/main/resources/metadata.csv");
-		String strTableName = "Student31";
+		String strTableName = "Student1";
 		String cluster = "id";
 
 		Hashtable htblColNameType = new Hashtable();
@@ -820,7 +811,7 @@ public class DBApp implements DBAppInterface {
 		htblColNameMax.put("gpa", "4.0");
 
 		Hashtable htblColNameValue = new Hashtable();
-		htblColNameValue.put("id", 140);
+		htblColNameValue.put("id", 80);
 		htblColNameValue.put("name", "zzzz");
 		htblColNameValue.put("gpa", 0.95);
 
@@ -836,47 +827,138 @@ public class DBApp implements DBAppInterface {
 
 		// System.out.println(prop.getProperty("app.version"));
 		// System.out.println(a.outOfRangeRoutine(htblColNameValue, table));
+//
+//		try {
+////			 a.createTable(strTableName, cluster, htblColNameType, htblColNameMin,
+////			 htblColNameMax);
+//			a.insertIntoTable(strTableName, htblColNameValue);
+//		} catch (DBAppException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+////
+//		finally {
+//			Vector<Hashtable<String, Object>> b = (Vector) a.deSerialize(
+//					"C:\\Users\\Mohamed Amr\\Desktop\\Desktop\\GUC\\Semester 6\\DB II\\Project\\GUC_437_53_5863_2021-04-11T23_56_39\\DB2Project\\src\\main\\resources\\data\\Student30\\1.class");
+//			for (Hashtable<String, Object> t : b) {
+//
+//				System.out.print(t.get("id") + " ");
+//
+//			}
+//		}
+
+//		Vector<Hashtable<String, Object>> b = (Vector) a.deSerialize(
+//				"C:\\Users\\Mohamed Amr\\Desktop\\Desktop\\GUC\\Semester 6\\DB II\\Project\\GUC_437_53_5863_2021-04-11T23_56_39\\DB2Project\\src\\main\\resources\\data\\Student1\\1.class");
+//		Vector<Hashtable<String, Object>> c = (Vector) a.deSerialize(
+//				"C:\\Users\\Mohamed Amr\\Desktop\\Desktop\\GUC\\Semester 6\\DB II\\Project\\GUC_437_53_5863_2021-04-11T23_56_39\\DB2Project\\src\\main\\resources\\data\\Student1\\2.class");
+//		Table table = (Table) a.deSerialize(
+//				"C:\\Users\\Mohamed Amr\\Desktop\\Desktop\\GUC\\Semester 6\\DB II\\Project\\GUC_437_53_5863_2021-04-11T23_56_39\\DB2Project\\src\\main\\resources\\data\\Student1\\Table.class");
+//		for (Hashtable<String, Object> t : b) {
+//
+//			System.out.print(t.get("id") + " ");
+//
+//		}
+//		
+//		System.out.println();
+//		
+//		for (Hashtable<String, Object> t : c) {
+//
+//			System.out.print(t.get("id") + " ");
+//
+//		}
+//
+//		
+//		System.out.println();
+//		System.out.println(table);
+//		
+//		
+
+		ArrayList<String[]> metaDataArray = readCSV(a.globalPath + "\\src\\main\\resources\\metadata.csv");
+
+		ArrayList<String[]> filteredArray = (ArrayList<String[]>) metaDataArray.stream()
+				.filter(b -> b[0].equals("students")).collect(Collectors.toList());
+
+////		Hashtable h1 = new Hashtable();
+//		h1.put("id", "50-3400");
+//		h1.put("dob", new Date("9/28/1990"));
+//		h1.put("gpa", 3.32);
+//		h1.put("first_name", "zzzzzzzzzzzzzzz");
+//		h1.put("last_name", "ppLsdd");
+
+		ArrayList<String[]> s = readCSV(
+				"C:\\Users\\Mohamed Amr\\Desktop\\Desktop\\GUC\\Semester 6\\DB II\\Project\\GUC_437_53_5863_2021-04-11T23_56_39\\DB2Project\\src\\main\\resources\\students_table.csv");
+//          int i = 0;
+//         for(String [] s1 : s) {
+//        		try {
+//        			Hashtable h1 = new Hashtable();
+//                    h1.put( "id" , s1[0]);
+//            		h1.put("dob", s1[3]);
+//            		h1.put("gpa", s1[4]);
+//            		h1.put("first_name", s1[1]);
+//            		h1.put("last_name", s1[2]);
+//
+//        			a.inputChecker(h1.keySet(), filteredArray, h1);
+//        			System.out.println(i++);
+//        		} catch (DBAppException e) {
+//        			// TODO Auto-generated catch block
+//        			e.printStackTrace();
+//        		}
+//
+//         }
+
+		SimpleDateFormat formatter1 = new SimpleDateFormat("YYYY-MM-DD");
+
+		String[] s1 = s.get(0);
+
+		for (String s2 : s1) {
+			System.out.println(s2);
+		}
 
 		try {
-//			 a.createTable(strTableName, cluster, htblColNameType, htblColNameMin,
-//			 htblColNameMax);
-			a.insertIntoTable(strTableName, htblColNameValue);
+			Hashtable h1 = new Hashtable();
+			h1.put("id", s1[0]);
+			h1.put("dob", formatter1.parseObject(s1[3]));
+			h1.put("gpa", Double.parseDouble(s1[4]));
+			h1.put("first_name", s1[1]);
+			h1.put("last_name", s1[2]);
+
+			a.inputChecker(h1.keySet(), filteredArray, h1);
 		} catch (DBAppException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ParseException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
-		finally {
-			Vector<Hashtable<String, Object>> b = (Vector) a.deSerialize(
-					"C:\\Users\\Mohamed Amr\\Desktop\\Desktop\\GUC\\Semester 6\\DB II\\Project\\GUC_437_53_5863_2021-04-11T23_56_39\\DB2Project\\src\\main\\resources\\data\\Student31\\1.class");
-			for (Hashtable<String, Object> t : b) {
-
-				System.out.print(t.get("id") + " ");
-
-			}
-		}
-//		
+		// Set colNames = h1.keySet();
+//		try {
+//			a.inputChecker(colNames, filteredArray, h1);
+//		} catch (DBAppException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 
 //		
 //		Table t = (Table) a.deSerialize(
 //				"C:\\Users\\Mohamed Amr\\Desktop\\Desktop\\GUC\\Semester 6\\DB II\\Project\\GUC_437_53_5863_2021-04-11T23_56_39\\DB2Project\\data\\Student26\\Table.class");
 
 		// System.out.println(t.toString());
-
-		Vector<Hashtable<String, Object>> page = new Vector<Hashtable<String, Object>>();
-
-		Hashtable h1 = new Hashtable();
-		h1.put("id", 50);
-
-		page.add(h1);
-
-		Hashtable h2 = new Hashtable();
-		h2.put("id", 100);
-
-		page.add(h2);
-
-		Hashtable h3 = new Hashtable();
-		h3.put("id", 120);
+//
+//		Vector<Hashtable<String, Object>> page = new Vector<Hashtable<String, Object>>();
+//
+//		Hashtable h1 = new Hashtable();
+//		h1.put("id", 50);
+//
+//		page.add(h1);
+//
+//		Hashtable h2 = new Hashtable();
+//		h2.put("id", 100);
+//
+//		page.add(h2);
+//
+//		Hashtable h3 = new Hashtable();
+//		h3.put("id", 120);
 
 //		//Page p = new Page(50,100,"1" );
 //		p.isFull = true;
