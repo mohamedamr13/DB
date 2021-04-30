@@ -194,7 +194,6 @@ public class DBApp implements DBAppInterface {
 
 		} else {
 			// Go to Insert Method to find Page ID
-			String pageId = "";
 			String pageID = insert(colNameValue.get(table.pk), table.pages);
 			if (pageID.equals("-1")) {
 
@@ -429,8 +428,17 @@ public class DBApp implements DBAppInterface {
 
 	}
 
+	static Date returnDate(String dateString) {
+		int year = Integer.parseInt(dateString.trim().substring(0, 4));
+		int month = Integer.parseInt(dateString.trim().substring(5, 7));
+		int day = Integer.parseInt(dateString.trim().substring(8));
+
+		Date date = new Date(year - 1900, month - 1, day);
+
+		return date;
+	}
+
 	public static boolean MinMaxChecker(String[] filteredArray, Object o) {
-		SimpleDateFormat formatter1 = new SimpleDateFormat("YYYY-MM-DD");
 
 		switch (filteredArray[2].substring(10).toLowerCase()) {
 		case "integer":
@@ -446,13 +454,9 @@ public class DBApp implements DBAppInterface {
 					&& Double.parseDouble(filteredArray[6]) >= (double) o;
 		case "date":
 			// System.out.println("date");
-			try {
-				return formatter1.parse(filteredArray[5]).compareTo((Date) o) <= 0
-						&& formatter1.parse(filteredArray[6]).compareTo((Date) o) >= 0;
-			} catch (ParseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			return returnDate(filteredArray[5]).compareTo((Date) o) <= 0
+					&& returnDate(filteredArray[6]).compareTo((Date) o) >= 0;
+
 		default:
 			return false;
 		}
@@ -906,30 +910,48 @@ public class DBApp implements DBAppInterface {
 //
 //         }
 
-		SimpleDateFormat formatter1 = new SimpleDateFormat("YYYY-MM-DD");
+//
+          int i = 0;
+		for (String[] s1 : s) {
+			try {
+				Hashtable h1 = new Hashtable();
+				h1.put("id", s1[0]);
 
-		String[] s1 = s.get(0);
+	            int year = Integer.parseInt(s1[3].trim().substring(0, 4));
+	            int month = Integer.parseInt(s1[3].trim().substring(5, 7));
+	            int day = Integer.parseInt(s1[3].trim().substring(8));
+	          
+	            Date dob = new Date(year - 1900, month - 1, day);
+				h1.put("dob", dob);
+				h1.put("gpa", Double.parseDouble(s1[4]));
+				h1.put("first_name", s1[1]);
+				h1.put("last_name", s1[2]);
+				
+				System.out.println(i++);
 
-		for (String s2 : s1) {
-			System.out.println(s2);
+				System.out.println(s1[3]);
+				System.out.println("-----------------------");
+
+				a.inputChecker(h1.keySet(), filteredArray, h1);
+			} catch (DBAppException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 
-		try {
-			Hashtable h1 = new Hashtable();
-			h1.put("id", s1[0]);
-			h1.put("dob", formatter1.parseObject(s1[3]));
-			h1.put("gpa", Double.parseDouble(s1[4]));
-			h1.put("first_name", s1[1]);
-			h1.put("last_name", s1[2]);
+//		Date dob = new Date(2000 - 1900, 5 - 1, 5);
+//		String[] c = filteredArray.get(3);
+//		int year = Integer.parseInt(c[6].trim().substring(0, 4));
+//		int month = Integer.parseInt(c[6].trim().substring(5, 7));
+//		int day = Integer.parseInt(c[6].trim().substring(8));
+//
+//		Date max = new Date(year - 1900, month - 1, day);
+//
+//		System.out.println("max : " + max);
+//		System.out.println("curr :  " + dob);
+//		System.out.println(max.compareTo(dob));
 
-			a.inputChecker(h1.keySet(), filteredArray, h1);
-		} catch (DBAppException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+//        Date max = new Date( 2000 - 1900 , 12-1 , 31 );
 
 		// Set colNames = h1.keySet();
 //		try {
