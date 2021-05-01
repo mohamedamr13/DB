@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
 
 import javax.swing.table.TableCellEditor;
 
-import com.sun.javadoc.Type;
 import com.sun.jdi.ReferenceType;
 
 //import jdk.vm.ci.meta.Local;
@@ -731,7 +730,8 @@ public class DBApp implements DBAppInterface {
 			String id = p.id;
 			Vector<Hashtable<String, Object>> page = ((Vector) deSerialize(
 					globalPath + localPath + tableName + "\\" + id + ".class"));
-			for (Hashtable<String, Object> row : page) {
+			for (int i =  0 ; i<page.size() ; i++) {
+				Hashtable<String, Object> row = page.get(i);
 				Set<String> cols = columnNameValue.keySet();
 				boolean flag = true;
 				for (String s : cols) {
@@ -741,7 +741,9 @@ public class DBApp implements DBAppInterface {
 				}
 
 				if (flag == true)
+				{
 					page.remove(row);
+				}
 
 			}
 			if (page.isEmpty()) {
@@ -953,12 +955,12 @@ public class DBApp implements DBAppInterface {
 			String table = "students";
 			Hashtable<String, Object> row = new Hashtable();
 			row.put("first_name", "foo");
-			row.put("middle_name", "hamada");
+			//row.put("middle_name", "hamada");
 			row.put("last_name", "bar");
 
 			Date dob = new Date(1992 - 1900, 9 - 1, 8);
 			row.put("dob", dob);
-			row.put("gpa", 1.1);
+			row.put("gpa", -1.0);
 
 			a.inputChecker(row.keySet(), filteredArray, row);
 		} catch (DBAppException e) {
